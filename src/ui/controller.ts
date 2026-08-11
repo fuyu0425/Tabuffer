@@ -218,7 +218,9 @@ export class Controller {
     const ids = [...this.state.markedIds].filter((id) => !this.isProtected(id));
     if (!ids.length) return;
     await this.adapter.closeTabs(ids);
-    this.state = { ...this.state, markedIds: new Set() };
+    const markedIds = new Set(this.state.markedIds);
+    for (const id of ids) markedIds.delete(id);
+    this.state = { ...this.state, markedIds };
     await this.refresh();
   }
 

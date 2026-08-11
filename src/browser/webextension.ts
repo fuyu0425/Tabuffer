@@ -32,7 +32,7 @@ export const webExtensionAdapter: BrowserAdapter = {
     if (current?.id !== undefined) return current.id;
 
     const tabs = await browser.tabs.query({});
-    return tabs.find((tab) => tab.id !== undefined && this.isManagerUrl(tab.url ?? ""))?.id ?? null;
+    return tabs.find((tab) => tab.id !== undefined && isManagerTab(tab))?.id ?? null;
   },
 
   isManagerUrl(url) {
@@ -55,7 +55,7 @@ export const webExtensionAdapter: BrowserAdapter = {
 
   async openOrFocusManager() {
     const existing = (await browser.tabs.query({})).find((tab) =>
-      tab.id !== undefined && this.isManagerUrl(tab.url ?? ""),
+      tab.id !== undefined && isManagerTab(tab),
     );
 
     if (existing?.id !== undefined) {
@@ -72,6 +72,8 @@ export const webExtensionAdapter: BrowserAdapter = {
       browser.tabs.onUpdated,
       browser.tabs.onActivated,
       browser.tabs.onMoved,
+      browser.tabs.onAttached,
+      browser.tabs.onDetached,
     ];
     const notify = () => listener();
 
@@ -81,3 +83,7 @@ export const webExtensionAdapter: BrowserAdapter = {
     };
   },
 };
+
+function isManagerTab(tab: { url?: string; pendingUrl?: string }): boolean {
+  return [tab.url, tab.pendingUrl].some((url) => url !== undefined && webExtensionAdapter.isManagerUrl(url));
+}
