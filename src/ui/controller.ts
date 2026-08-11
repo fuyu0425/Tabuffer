@@ -54,6 +54,10 @@ export class Controller {
       event.preventDefault();
       return;
     }
+    if (this.input.mode === "confirmDelete" && !result.command) {
+      event.preventDefault();
+      return;
+    }
     if (!result.command && result.state.pending === "") return;
 
     event.preventDefault();
@@ -106,7 +110,18 @@ export class Controller {
     }
     if (command === "markGroup") return this.markGroup();
     if (command === "deleteMarked") return this.deleteMarked();
-    if (command === "executeDeletes") return this.deleteMarked(true);
+    if (command === "requestDeleteConfirmation") {
+      if (this.state.deletionMarkedIds.size) this.input = { mode: "confirmDelete", pending: "" };
+      return this.render();
+    }
+    if (command === "executeDeletes") {
+      this.input = createInputState();
+      return this.deleteMarked(true);
+    }
+    if (command === "cancelDeleteConfirmation") {
+      this.input = createInputState();
+      return this.render();
+    }
     if (command === "activate") return this.activateCurrent();
     if (command === "enterSearch") {
       this.render();
@@ -238,7 +253,10 @@ export class Controller {
       const tab = liveTabs.get(id);
       return tab && !tab.pinned && id !== managerTabId && !this.adapter.isManagerUrl(tab.url);
     });
-    if (!ids.length) return;
+    if (!ids.length) {
+      await this.refresh();
+      return;
+    }
     await this.adapter.closeTabs(ids);
     const remainingIds = new Set(deletionsOnly ? this.state.deletionMarkedIds : this.state.markedIds);
     for (const id of ids) remainingIds.delete(id);

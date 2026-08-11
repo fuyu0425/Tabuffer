@@ -12,7 +12,9 @@ export type Command =
   | "toggleMark"
   | "markGroup"
   | "deleteMarked"
+  | "requestDeleteConfirmation"
   | "executeDeletes"
+  | "cancelDeleteConfirmation"
   | "activate"
   | "enterSearch"
   | "leaveSearch"
@@ -30,7 +32,7 @@ export type Command =
   | "quit";
 
 export interface InputState {
-  mode: "normal" | "search" | "help";
+  mode: "normal" | "search" | "help" | "confirmDelete";
   pending: "" | "g" | "s";
 }
 
@@ -52,7 +54,7 @@ const singleKeys: Readonly<Record<string, Command>> = {
   "*": "toggleMark",
   M: "markGroup",
   D: "deleteMarked",
-  x: "executeDeletes",
+  x: "requestDeleteConfirmation",
   Enter: "activate",
   r: "refresh",
   "1": "flatView",
@@ -74,6 +76,12 @@ export function createInputState(): InputState {
 }
 
 export function handleKey(state: InputState, key: string, view: ViewMode): KeyResult {
+  if (state.mode === "confirmDelete") {
+    if (key === "y") return command("executeDeletes");
+    if (key === "n" || key === "Escape") return command("cancelDeleteConfirmation");
+    return { state };
+  }
+
   if (state.mode === "help") {
     return key === "Escape" || key === "q" || key === "?"
       ? { state: createInputState(), command: "leaveHelp" }

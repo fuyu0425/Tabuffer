@@ -16,7 +16,7 @@ describe("normal mode commands", () => {
     ["*", "toggleMark"],
     ["M", "markGroup"],
     ["D", "deleteMarked"],
-    ["x", "executeDeletes"],
+    ["x", "requestDeleteConfirmation"],
     ["Enter", "activate"],
     ["r", "refresh"],
     ["1", "flatView"],
@@ -112,6 +112,29 @@ describe("help mode", () => {
   it("suspends normal commands while help is open", () => {
     expect(handleKey({ mode: "help", pending: "" }, "d", "flat")).toEqual({
       state: { mode: "help", pending: "" },
+    });
+  });
+});
+
+describe("delete confirmation mode", () => {
+  it("accepts y and cancels with n or Escape", () => {
+    const confirmation = { mode: "confirmDelete", pending: "" } as const;
+
+    expect(handleKey(confirmation, "y", "flat")).toEqual({
+      state: createInputState(),
+      command: "executeDeletes",
+    });
+    for (const key of ["n", "Escape"]) {
+      expect(handleKey(confirmation, key, "flat")).toEqual({
+        state: createInputState(),
+        command: "cancelDeleteConfirmation",
+      });
+    }
+  });
+
+  it("ignores other keys while awaiting confirmation", () => {
+    expect(handleKey({ mode: "confirmDelete", pending: "" }, "d", "flat")).toEqual({
+      state: { mode: "confirmDelete", pending: "" },
     });
   });
 });

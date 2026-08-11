@@ -22,6 +22,7 @@ const tab = (id: number, overrides: Partial<TabInfo> = {}): TabInfo => ({
 
 type TestController = {
   state: AppState;
+  input: import("../input/command").InputState;
   rows: VisibleRow[];
   cursorRowId: string | null;
   managerTabId: number | null;
@@ -63,7 +64,7 @@ it("marks and unmarks the current tab while advancing the cursor", async () => {
   expect(controller.cursorRowId).toBe("tab:2");
 });
 
-it("marks tabs for deletion with d and executes only those marks with x", async () => {
+it("requires confirmation before executing deletion marks", async () => {
   const { adapter, controller } = setup([tab(1), tab(2), tab(3)]);
 
   await controller.run("markDelete");
@@ -71,6 +72,10 @@ it("marks tabs for deletion with d and executes only those marks with x", async 
   expect(controller.cursorRowId).toBe("tab:2");
 
   await controller.run("mark");
+  await controller.run("requestDeleteConfirmation");
+  expect(controller.input.mode).toBe("confirmDelete");
+  expect(adapter.closeTabs).not.toHaveBeenCalled();
+
   await controller.run("executeDeletes");
 
   expect(adapter.closeTabs).toHaveBeenCalledWith([1]);

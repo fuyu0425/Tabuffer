@@ -87,6 +87,15 @@ describe("statusText", () => {
     );
   });
 
+  it("prompts before executing deletion marks", () => {
+    const deletionState = state();
+    deletionState.deletionMarkedIds.add(1);
+
+    expect(statusText(deletionState, { mode: "confirmDelete", pending: "" }, 2)).toContain(
+      "Really close 1 tab? (y or n)",
+    );
+  });
+
   it("includes SEARCH mode and the active filter", () => {
     const input: InputState = { mode: "search", pending: "" };
 

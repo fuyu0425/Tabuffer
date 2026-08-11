@@ -2,6 +2,11 @@ import type { AppState } from "../core/state";
 import type { InputState } from "../input/command";
 
 export function statusText(state: AppState, input: InputState, visibleRows: number): string {
+  if (input.mode === "confirmDelete") {
+    const count = state.deletionMarkedIds.size;
+    return `Really close ${count} ${count === 1 ? "tab" : "tabs"}? (y or n)`;
+  }
+
   const mode = input.mode.toUpperCase();
   const sortLabels = {
     lastAccessed: "newest accessed",
