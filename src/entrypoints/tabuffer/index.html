@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tabuffer</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body data-mode="normal">
+    <header>
+      <h1>TABUFFER</h1>
+      <nav aria-label="Views"><span>1 Flat</span><span>2 Domain</span><span>3 Tree</span></nav>
+      <output id="summary">Loading tabs…</output>
+    </header>
+    <label id="search" for="search-input">/</label>
+    <input id="search-input" type="search" autocomplete="off" spellcheck="false" aria-label="Filter tabs" />
+    <main id="rows" role="listbox" aria-label="Tabs"></main>
+    <footer id="status">-- NORMAL --</footer>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

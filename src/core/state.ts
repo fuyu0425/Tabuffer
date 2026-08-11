@@ -23,7 +23,7 @@ export function createAppState(tabs: TabInfo[] = []): AppState {
     cursorId: firstTabId(tabMap),
     view: "flat",
     filter: "",
-    flatSort: "browser",
+    flatSort: "lastAccessed",
     collapsedDomains: new Set(),
     collapsedTreeIds: new Set(),
   };
