@@ -9,6 +9,7 @@ export interface AppState {
   deletionMarkedIds: Set<number>;
   cursorId: number | null;
   view: ViewMode;
+  filterStack: string[];
   filter: string;
   flatSort: TabSort;
   collapsedDomains: Set<string>;
@@ -24,6 +25,7 @@ export function createAppState(tabs: TabInfo[] = []): AppState {
     deletionMarkedIds: new Set(),
     cursorId: firstTabId(tabMap),
     view: "flat",
+    filterStack: [],
     filter: "",
     flatSort: "lastAccessed",
     collapsedDomains: new Set(),

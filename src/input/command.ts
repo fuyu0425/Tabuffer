@@ -17,7 +17,9 @@ export type Command =
   | "cancelDeleteConfirmation"
   | "activate"
   | "enterSearch"
-  | "leaveSearch"
+  | "acceptSearch"
+  | "cancelSearch"
+  | "popFilter"
   | "enterHelp"
   | "leaveHelp"
   | "refresh"
@@ -63,6 +65,7 @@ const singleKeys: Readonly<Record<string, Command>> = {
   h: "left",
   l: "right",
   q: "quit",
+  "\\": "popFilter",
 };
 
 const sortKeys: Readonly<Record<string, Command>> = {
@@ -89,9 +92,9 @@ export function handleKey(state: InputState, key: string, view: ViewMode): KeyRe
   }
 
   if (state.mode === "search") {
-    return key === "Escape" || key === "Enter"
-      ? { state: createInputState(), command: "leaveSearch" }
-      : { state };
+    if (key === "Enter") return { state: createInputState(), command: "acceptSearch" };
+    if (key === "Escape") return { state: createInputState(), command: "cancelSearch" };
+    return { state };
   }
 
   if (key === "Escape") return { state: createInputState() };

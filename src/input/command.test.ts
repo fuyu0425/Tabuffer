@@ -82,15 +82,19 @@ describe("search input mode", () => {
   it("leaves search mode on Escape", () => {
     expect(handleKey({ mode: "search", pending: "" }, "Escape", "flat")).toEqual({
       state: createInputState(),
-      command: "leaveSearch",
+      command: "cancelSearch",
     });
   });
 
   it("accepts the current filter and returns to normal mode on Enter", () => {
     expect(handleKey({ mode: "search", pending: "" }, "Enter", "domain")).toEqual({
       state: createInputState(),
-      command: "leaveSearch",
+      command: "acceptSearch",
     });
+  });
+
+  it("pops the newest filter with backslash", () => {
+    expect(handleKey(createInputState(), "\\", "flat")).toMatchObject({ command: "popFilter" });
   });
 
   it("clears a pending normal-mode prefix on Escape", () => {

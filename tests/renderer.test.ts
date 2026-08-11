@@ -99,8 +99,8 @@ describe("statusText", () => {
   it("includes SEARCH mode and the active filter", () => {
     const input: InputState = { mode: "search", pending: "" };
 
-    expect(statusText(state({ view: "domain", filter: "docs" }), input, 3)).toContain(
-      "-- SEARCH --  Domain groups · 2 tabs · 1 marked · /docs · 3 rows",
+    expect(statusText(state({ view: "domain", filterStack: ["github"], filter: "docs" }), input, 3)).toContain(
+      "-- SEARCH --  Domain groups · 2 tabs · 1 marked · /github /docs_ · 3 rows",
     );
   });
 });

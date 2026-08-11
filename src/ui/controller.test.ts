@@ -142,6 +142,47 @@ it("preserves global marks across view and filter projection changes", async () 
   expect(controller.rows.map((row) => row.rowId)).toEqual(["domain:example.test", "tab:2"]);
 });
 
+it("stacks cumulative searches and pops them back to no filter", async () => {
+  const { controller, searchInput } = setup([
+    tab(1, { title: "GitHub issue" }),
+    tab(2, { title: "GitHub home" }),
+    tab(3, { title: "Reddit issue" }),
+  ]);
+
+  await controller.run("enterSearch");
+  searchInput.value = "github";
+  controller.onSearchInput();
+  await controller.run("acceptSearch");
+  expect(controller.state.filterStack).toEqual(["github"]);
+  expect(controller.rows.map((row) => row.rowId)).toEqual(["tab:1", "tab:2"]);
+
+  await controller.run("enterSearch");
+  searchInput.value = "issue";
+  controller.onSearchInput();
+  await controller.run("acceptSearch");
+  expect(controller.state.filterStack).toEqual(["github", "issue"]);
+  expect(controller.rows.map((row) => row.rowId)).toEqual(["tab:1"]);
+
+  await controller.run("popFilter");
+  expect(controller.rows.map((row) => row.rowId)).toEqual(["tab:1", "tab:2"]);
+  await controller.run("popFilter");
+  expect(controller.state.filterStack).toEqual([]);
+  expect(controller.rows).toHaveLength(3);
+});
+
+it("cancels a draft search without pushing it", async () => {
+  const { controller, searchInput } = setup([tab(1), tab(2, { title: "Reddit" })]);
+
+  await controller.run("enterSearch");
+  searchInput.value = "reddit";
+  controller.onSearchInput();
+  expect(controller.rows.map((row) => row.rowId)).toEqual(["tab:2"]);
+
+  await controller.run("cancelSearch");
+  expect(controller.state.filterStack).toEqual([]);
+  expect(controller.rows).toHaveLength(2);
+});
+
 it("marks an entire domain except protected tabs", async () => {
   const { controller } = setup([
     tab(1),

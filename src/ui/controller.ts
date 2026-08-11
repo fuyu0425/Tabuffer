@@ -127,14 +127,32 @@ export class Controller {
     }
     if (command === "activate") return this.activateCurrent();
     if (command === "enterSearch") {
+      this.state = { ...this.state, filter: "" };
+      this.renderer.searchInput.value = "";
       this.render();
       this.renderer.searchInput.focus();
-      this.renderer.searchInput.select();
       return;
     }
-    if (command === "leaveSearch") {
+    if (command === "acceptSearch") {
+      const filter = this.state.filter.trim();
+      this.state = {
+        ...this.state,
+        filterStack: filter ? [...this.state.filterStack, filter] : this.state.filterStack,
+        filter: "",
+      };
+      this.renderer.searchInput.value = "";
       this.renderer.searchInput.blur();
-      return this.render();
+      return this.updateRows();
+    }
+    if (command === "cancelSearch") {
+      this.state = { ...this.state, filter: "" };
+      this.renderer.searchInput.value = "";
+      this.renderer.searchInput.blur();
+      return this.updateRows();
+    }
+    if (command === "popFilter") {
+      this.state = { ...this.state, filterStack: this.state.filterStack.slice(0, -1) };
+      return this.updateRows();
     }
     if (command === "enterHelp" || command === "leaveHelp") return this.render();
     if (command === "refresh") return this.refresh();
@@ -152,7 +170,7 @@ export class Controller {
   }
 
   private updateRows(preferredRowId = this.cursorRowId): void {
-    const tabs = filterTabs([...this.state.tabs.values()], this.state.filter);
+    const tabs = this.filteredTabs();
 
     if (this.state.view === "flat") {
       this.rows = sortTabs(tabs, this.state.flatSort).map((tab) => ({ kind: "tab", rowId: `tab:${tab.id}`, tab }));
@@ -311,7 +329,7 @@ export class Controller {
       return;
     }
 
-    const visibleTabs = filterTabs([...this.state.tabs.values()], this.state.filter);
+    const visibleTabs = this.filteredTabs();
     const parent = findTreeParent(buildTabForest(visibleTabs), row.tab.id);
     if (parent && this.rows.some((candidate) => candidate.rowId === `tab:${parent.tab.id}`)) {
       this.select(`tab:${parent.tab.id}`);
@@ -363,6 +381,12 @@ export class Controller {
   private isProtected(id: number): boolean {
     const tab = this.state.tabs.get(id);
     return !tab || tab.pinned || id === this.managerTabId || this.adapter.isManagerUrl(tab.url);
+  }
+
+  private filteredTabs(): TabInfo[] {
+    return [...this.state.filterStack, this.state.filter]
+      .filter(Boolean)
+      .reduce((tabs, filter) => filterTabs(tabs, filter), [...this.state.tabs.values()]);
   }
 }
 
