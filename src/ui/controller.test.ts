@@ -32,7 +32,11 @@ type TestController = {
   onSearchInput(): void;
 };
 
-function setup(tabs: TabInfo[], managerTabId: number | null = null) {
+function setup(
+  tabs: TabInfo[],
+  managerTabId: number | null = null,
+  storage?: Pick<Storage, "getItem" | "setItem">,
+) {
   const adapter: BrowserAdapter = {
     getTabs: vi.fn(async () => tabs),
     getManagerTabId: vi.fn(async () => managerTabId),
@@ -44,12 +48,42 @@ function setup(tabs: TabInfo[], managerTabId: number | null = null) {
   };
   const searchInput = { value: "", focus: vi.fn(), select: vi.fn(), blur: vi.fn() };
   const renderer = { render: vi.fn(), searchInput } as unknown as Renderer;
-  const controller = new Controller(adapter, renderer) as unknown as TestController;
-  controller.state = createAppState(tabs);
+  const controller = new Controller(adapter, renderer, storage) as unknown as TestController;
+  controller.state = {
+    ...createAppState(tabs),
+    view: controller.state.view,
+    flatSort: controller.state.flatSort,
+  };
   controller.managerTabId = managerTabId;
   controller.updateRows();
   return { adapter, controller, searchInput };
 }
+
+it("restores a valid saved view and Flat sort", () => {
+  const storage = {
+    getItem: vi.fn(() => JSON.stringify({ view: "tree", flatSort: "domain" })),
+    setItem: vi.fn(),
+  };
+
+  const { controller } = setup([tab(1)], null, storage);
+
+  expect(controller.state.view).toBe("tree");
+  expect(controller.state.flatSort).toBe("domain");
+});
+
+it("saves view and Flat sort changes", async () => {
+  const storage = { getItem: vi.fn(() => null), setItem: vi.fn() };
+  const { controller } = setup([tab(1)], null, storage);
+
+  await controller.run("domainView");
+  await controller.run("flatView");
+  await controller.run("sortBrowser");
+
+  expect(storage.setItem).toHaveBeenLastCalledWith(
+    "tabuffer.preferences",
+    JSON.stringify({ view: "flat", flatSort: "browser" }),
+  );
+});
 
 it("marks and unmarks the current tab while advancing the cursor", async () => {
   const { controller } = setup([tab(1), tab(2), tab(3)]);

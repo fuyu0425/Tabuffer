@@ -1,6 +1,6 @@
 import type { BrowserAdapter } from "../browser/adapter";
 import { filterTabs } from "../core/filters";
-import { sortTabs } from "../core/sorting";
+import { sortTabs, type TabSort } from "../core/sorting";
 import { createAppState, markTab, markTabForDeletion, reconcileTabs, unmarkTab, type AppState, type ViewMode } from "../core/state";
 import type { TabInfo } from "../core/tab";
 import {
@@ -26,7 +26,10 @@ export class Controller {
   constructor(
     private readonly adapter: BrowserAdapter,
     private readonly renderer: Renderer,
-  ) {}
+    private readonly storage?: Pick<Storage, "getItem" | "setItem">,
+  ) {
+    this.state = { ...this.state, ...readPreferences(storage) };
+  }
 
   async start(): Promise<void> {
     window.addEventListener("keydown", this.onKeyDown);
@@ -273,13 +276,26 @@ export class Controller {
 
   private changeView(view: ViewMode): void {
     this.state = { ...this.state, view };
+    this.savePreferences();
     this.updateRows();
   }
 
   private changeSort(flatSort: AppState["flatSort"]): void {
     if (this.state.view !== "flat") return;
     this.state = { ...this.state, flatSort };
+    this.savePreferences();
     this.updateRows();
+  }
+
+  private savePreferences(): void {
+    try {
+      this.storage?.setItem(
+        "tabuffer.preferences",
+        JSON.stringify({ view: this.state.view, flatSort: this.state.flatSort }),
+      );
+    } catch {
+      // Preferences are optional when storage is unavailable.
+    }
   }
 
   private left(): void {
@@ -347,6 +363,28 @@ export class Controller {
   private isProtected(id: number): boolean {
     const tab = this.state.tabs.get(id);
     return !tab || tab.pinned || id === this.managerTabId || this.adapter.isManagerUrl(tab.url);
+  }
+}
+
+function readPreferences(
+  storage?: Pick<Storage, "getItem">,
+): Partial<Pick<AppState, "view" | "flatSort">> {
+  try {
+    const value = JSON.parse(storage?.getItem("tabuffer.preferences") ?? "null") as {
+      view?: unknown;
+      flatSort?: unknown;
+    } | null;
+    if (!value) return {};
+    const preferences: Partial<Pick<AppState, "view" | "flatSort">> = {};
+    if (["flat", "domain", "tree"].includes(value.view as ViewMode)) {
+      preferences.view = value.view as ViewMode;
+    }
+    if (["lastAccessed", "browser", "domain"].includes(value.flatSort as TabSort)) {
+      preferences.flatSort = value.flatSort as TabSort;
+    }
+    return preferences;
+  } catch {
+    return {};
   }
 }
 

@@ -9,7 +9,7 @@ const renderer = new Renderer(
   required<HTMLInputElement>("search-input"),
 );
 
-void new Controller(webExtensionAdapter, renderer).start().catch(console.error);
+void new Controller(webExtensionAdapter, renderer, localStorage).start().catch(console.error);
 
 function required<T extends HTMLElement = HTMLElement>(id: string): T {
   const element = document.getElementById(id);
