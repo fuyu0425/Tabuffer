@@ -32,4 +32,20 @@ describe("normalizeTab", () => {
       }),
     ).toMatchObject({ url: "about:preferences", domain: "" });
   });
+
+  it("does not derive a domain from host-bearing non-web URLs", () => {
+    expect(
+      normalizeTab({
+        id: 9,
+        windowId: 2,
+        index: 5,
+        url: "moz-extension://extension-id/options.html",
+        title: "Options",
+        lastAccessed: 102,
+      }),
+    ).toMatchObject({
+      url: "moz-extension://extension-id/options.html",
+      domain: "",
+    });
+  });
 });

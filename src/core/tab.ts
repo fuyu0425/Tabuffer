@@ -50,7 +50,10 @@ export function normalizeUrl(url: string): string {
 
 export function domainFromUrl(url: string): string {
   try {
-    return new URL(url).hostname.toLowerCase();
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:"
+      ? parsed.hostname.toLowerCase()
+      : "";
   } catch {
     return "";
   }
