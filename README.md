@@ -195,6 +195,17 @@ See [AGENTS.md](AGENTS.md) for the repository's detailed engineering rules.
 
 Tabuffer is available under the [MIT License](LICENSE).
 
+## Companion projects
+
+These projects solve related tab-management problems with different purposes and interaction styles:
+
+- [kTab Manager](https://addons.mozilla.org/firefox/addon/ktab-manager/) is a fast keyboard-first switcher with domain and window grouping, usage-based sorting, and duplicate cleanup.
+- [Sidebery](https://addons.mozilla.org/firefox/addon/sidebery/) is a persistent Firefox sidebar for tab trees, panels, containers, bookmarks, and snapshots.
+- [Tree Style Tab](https://addons.mozilla.org/firefox/addon/tree-style-tab/) provides a mature tree-oriented tab sidebar for Firefox.
+- [HelloTabs](https://addons.mozilla.org/firefox/addon/hellotabs/) offers fuzzy tab search, quick switching, sorting, and conventional batch actions.
+
+Tabuffer stays focused on an Emacs `ibuffer`-style list: keyboard-driven views, cumulative filtering, marks, and deliberate mark-then-execute actions.
+
 ## References
 
 - [Temporary extension installation in Firefox](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
