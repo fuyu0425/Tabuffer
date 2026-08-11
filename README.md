@@ -113,10 +113,10 @@ cd Tabuffer
 npm ci
 ```
 
-### Firefox
+### Firefox development and debugging
 
 ```sh
-npm run build -- --browser firefox
+npm run build:firefox
 ```
 
 1. Open `about:debugging` in Firefox.
@@ -124,12 +124,37 @@ npm run build -- --browser firefox
 3. Select **Load Temporary Add-on**.
 4. Choose `dist/firefox-mv3/manifest.json`.
 
-Firefox removes temporary add-ons when it restarts. A persistent end-user installation requires a package signed by Mozilla; the planned Firefox Add-ons release will provide that.
+This development installation is unsigned and temporary: Firefox removes it when the browser restarts. Rebuild, then select **Reload** on the extension in `about:debugging` after code changes.
 
-### Chrome and Chromium browsers
+### Firefox packaged installation
+
+Create the Firefox store archive, source archive, and unsigned XPI:
 
 ```sh
-npm run build -- --browser chrome
+npm run package:firefox
+```
+
+This produces:
+
+```text
+dist/tabuffer-0.1.0-firefox.zip   AMO submission archive
+dist/tabuffer-0.1.0-firefox.xpi   identical extension archive with an XPI name
+dist/tabuffer-0.1.0-sources.zip   source archive for Mozilla review
+```
+
+The locally generated XPI is **not signed by Mozilla**. To test it persistently, use Firefox Developer Edition, Nightly, or another compatible build that honors `xpinstall.signatures.required=false`:
+
+1. Open `about:config`, set `xpinstall.signatures.required` to `false`, and restart Firefox if requested.
+2. Open `about:addons`.
+3. Open the gear menu and select **Install Add-on From File**.
+4. Choose `dist/tabuffer-0.1.0-firefox.xpi` and approve its permissions.
+
+Standard Firefox requires a Mozilla-signed XPI. Submit the Firefox ZIP and source ZIP to AMO—or use AMO's unlisted signing channel—then install the signed XPI through the same **Install Add-on From File** menu. Signed and supported XPI installations persist across restarts.
+
+### Chrome development and debugging
+
+```sh
+npm run build:chrome
 ```
 
 1. Open `chrome://extensions`.
@@ -137,7 +162,17 @@ npm run build -- --browser chrome
 3. Select **Load unpacked**.
 4. Choose `dist/chrome-mv3`.
 
-Click Tabuffer's toolbar icon to open or focus the manager.
+The unpacked extension remains installed across browser restarts as long as the `dist/chrome-mv3` folder stays available. After rebuilding, select Tabuffer's **Reload** button on `chrome://extensions`. Click its toolbar icon to open or focus the manager.
+
+### Chrome packaged distribution
+
+Create the Chrome Web Store archive:
+
+```sh
+npm run package:chrome
+```
+
+This produces `dist/tabuffer-0.1.0-chrome.zip`. Upload that ZIP to the Chrome Web Store. Chrome does not install the ZIP directly from `chrome://extensions`; use the unpacked development workflow above or install a published store release.
 
 ## Privacy and permissions
 
@@ -150,20 +185,19 @@ It does not request host permissions, inject content scripts, read page contents
 ```sh
 npm test
 npm run typecheck
-npm run build -- --browser chrome
-npm run build -- --browser firefox
+npm run build:chrome
+npm run build:firefox
 ```
 
 Run browser builds sequentially: WXT writes generated files beneath the shared `dist` directory.
 
-To create store submission archives with the installed WXT CLI:
+Create every browser package in sequence:
 
 ```sh
-npx wxt zip --browser chrome
-npx wxt zip --browser firefox
+npm run package
 ```
 
-The Firefox command also creates a source archive for Mozilla's review. Before the first Firefox Add-ons submission, the manifest must receive a stable Gecko extension ID.
+The Firefox manifest uses the stable extension ID `tabuffer@fuyu0425.github.io`. Generated builds and archives stay beneath the ignored `dist` directory.
 
 ### Project layout
 
@@ -209,5 +243,7 @@ Tabuffer stays focused on an Emacs `ibuffer`-style list: keyboard-driven views, 
 ## References
 
 - [Temporary extension installation in Firefox](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
+- [Packaging Firefox extensions and XPI files](https://extensionworkshop.com/documentation/publish/package-your-extension/)
+- [Signing and self-distributing Firefox extensions](https://extensionworkshop.com/documentation/publish/self-distribution/)
 - [Loading an unpacked extension in Chrome](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked)
 - [Publishing extensions with WXT](https://wxt.dev/guide/essentials/publishing)
