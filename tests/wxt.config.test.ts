@@ -2,6 +2,10 @@ import { expect, it } from "vitest";
 
 import config from "../wxt.config";
 
+it("writes generated artifacts to dist", () => {
+  expect((config as { outDir?: string }).outDir).toBe("dist");
+});
+
 it("opens from a toolbar action without defining keyboard commands", () => {
   const manifest = (config as {
     manifest?: {
@@ -22,4 +26,10 @@ it("opens from a toolbar action without defining keyboard commands", () => {
   expect(manifest?.icons).toEqual(icons);
   expect(manifest?.action).toEqual({ default_title: "Open Tabuffer", default_icon: icons });
   expect(manifest?.commands).toBeUndefined();
+});
+
+it("excludes local planning notes from Firefox source archives", () => {
+  const zip = (config as { zip?: { excludeSources?: string[] } }).zip;
+
+  expect(zip?.excludeSources).toContain("docs/superpowers/**");
 });

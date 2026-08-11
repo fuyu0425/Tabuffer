@@ -1,4 +1,39 @@
+# Dependencies
 node_modules/
-.output/
+
+# WXT and extension build artifacts
 .wxt/
 dist/
+web-ext-artifacts/
+
+# Tests and TypeScript
+coverage/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local environment and publishing credentials
+.env
+.env.*
+!.env.example
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local agent and planning state
+AGENTS.local.md
+docs/superpowers/
+docs/planning/
+.planning/
+.gsd/
+.codex/

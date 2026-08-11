@@ -10,7 +10,11 @@ const icons = {
 
 export default defineConfig({
   srcDir: "src",
+  outDir: "dist",
   manifestVersion: 3,
+  zip: {
+    excludeSources: ["docs/superpowers/**"],
+  },
   manifest: {
     name: "Tabuffer",
     description: "A keyboard-first tab manager.",
