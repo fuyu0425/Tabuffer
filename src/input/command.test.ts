@@ -22,6 +22,7 @@ describe("normal mode commands", () => {
     ["1", "flatView"],
     ["2", "domainView"],
     ["3", "treeView"],
+    ["T", "cycleTheme"],
     ["h", "left"],
     ["l", "right"],
     ["q", "quit"],
@@ -43,7 +44,8 @@ describe("normal mode commands", () => {
     ["t", "sortAccessed"],
     ["o", "sortBrowser"],
     ["d", "sortDomain"],
-  ] as const)("maps flat-mode s%s to %s", (key, command) => {
+    ["r", "toggleSortDirection"],
+  ] as const)("maps s%s to %s", (key, command) => {
     const pending = handleKey(createInputState(), "s", "flat");
 
     expect(handleKey(pending.state, key, "flat")).toEqual({
@@ -52,9 +54,15 @@ describe("normal mode commands", () => {
     });
   });
 
-  it("does not start a sort prefix outside Flat view", () => {
-    expect(handleKey(createInputState(), "s", "domain")).toEqual({
+  it.each(["flat", "domain", "tree"] as const)("opens and completes the sort prefix in %s view", (view) => {
+    const pending = handleKey(createInputState(), "s", view);
+
+    expect(pending).toEqual({
+      state: { mode: "normal", pending: "s" },
+    });
+    expect(handleKey(pending.state, "t", view)).toEqual({
       state: createInputState(),
+      command: "sortAccessed",
     });
   });
 

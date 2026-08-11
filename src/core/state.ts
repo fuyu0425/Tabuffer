@@ -2,6 +2,7 @@ import type { TabSort } from "./sorting";
 import type { TabInfo } from "./tab";
 
 export type ViewMode = "flat" | "domain" | "tree";
+export type ThemeMode = "auto" | "light" | "dark";
 
 export interface AppState {
   tabs: Map<number, TabInfo>;
@@ -11,7 +12,9 @@ export interface AppState {
   view: ViewMode;
   filterStack: string[];
   filter: string;
-  flatSort: TabSort;
+  sort: TabSort;
+  sortReversed: boolean;
+  theme: ThemeMode;
   collapsedDomains: Set<string>;
   collapsedTreeIds: Set<number>;
 }
@@ -27,7 +30,9 @@ export function createAppState(tabs: TabInfo[] = []): AppState {
     view: "flat",
     filterStack: [],
     filter: "",
-    flatSort: "lastAccessed",
+    sort: "lastAccessed",
+    sortReversed: false,
+    theme: "auto",
     collapsedDomains: new Set(),
     collapsedTreeIds: new Set(),
   };
@@ -45,10 +50,7 @@ export function reconcileTabs(
     }),
   );
   const deletionMarkedIds = new Set(
-    [...state.deletionMarkedIds].filter((id) => {
-      const tab = tabMap.get(id);
-      return tab !== undefined && !tab.pinned;
-    }),
+    [...state.deletionMarkedIds].filter((id) => tabMap.has(id)),
   );
 
   return {
@@ -73,7 +75,7 @@ export function markTab(state: AppState, id: number): AppState {
 
 export function markTabForDeletion(state: AppState, id: number): AppState {
   const tab = state.tabs.get(id);
-  if (!tab || tab.pinned || state.deletionMarkedIds.has(id)) return state;
+  if (!tab || state.deletionMarkedIds.has(id)) return state;
 
   const markedIds = new Set(state.markedIds);
   markedIds.delete(id);

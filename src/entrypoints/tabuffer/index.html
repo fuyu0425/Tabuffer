@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png" />
     <link rel="stylesheet" href="./style.css" />
   </head>
-  <body data-mode="normal">
+  <body data-mode="normal" data-theme="auto">
     <header>
       <h1>TABUFFER</h1>
       <nav aria-label="Views"><span>1 Flat</span><span>2 Domain</span><span>3 Tree</span></nav>
@@ -22,18 +22,26 @@
       <section><h3>Views / grouping</h3><dl>
         <dt>1</dt><dd>Flat list</dd><dt>2</dt><dd>Group by domain</dd><dt>3</dt><dd>Opener tree</dd>
       </dl></section>
-      <section><h3>Flat sorting</h3><dl>
-        <dt>st</dt><dd>Newest accessed first</dd><dt>so</dt><dd>Browser tab order</dd><dt>sd</dt><dd>Domain</dd>
+      <section><h3>Sorting</h3><dl>
+        <dt>s</dt><dd>Open sort choices</dd><dt>st</dt><dd>Newest accessed first</dd><dt>so</dt><dd>Browser tab order</dd><dt>sd</dt><dd>Domain</dd><dt>sr</dt><dd>Reverse current sort</dd>
       </dl></section>
       <section><h3>Navigation</h3><dl>
         <dt>j / ↓</dt><dd>Next row</dd><dt>k / ↑</dt><dd>Previous row</dd><dt>gg / G</dt><dd>First / last row</dd><dt>h / l</dt><dd>Collapse / expand</dd>
       </dl></section>
       <section><h3>Marks and actions</h3><dl>
-        <dt>d</dt><dd>Mark for deletion and move down</dd><dt>x</dt><dd>Confirm and execute deletion marks</dd><dt>m / u</dt><dd>Mark / unmark and move down</dd><dt>M</dt><dd>Mark domain or subtree</dd><dt>D</dt><dd>Close ordinary marks</dd><dt>U</dt><dd>Clear all marks</dd>
+        <dt>d</dt><dd>Flag tab, domain group, or tree subtree, including pinned tabs</dd><dt>x</dt><dd>Confirm and execute deletion marks</dd><dt>m / u</dt><dd>Mark / unmark and move down</dd><dt>M</dt><dd>Mark domain or subtree</dd><dt>D</dt><dd>Close ordinary marks (unpinned only)</dd><dt>U</dt><dd>Clear all marks</dd>
       </dl></section>
       <section><h3>General</h3><dl>
-        <dt>/</dt><dd>Push a cumulative search; Enter accepts</dd><dt>\</dt><dd>Pop the newest search; empty stack shows all</dd><dt>M</dt><dd>On a Domain header, mark the whole group</dd><dt>Enter</dt><dd>In Normal mode, activate a tab</dd><dt>r</dt><dd>Refresh</dd><dt>q</dt><dd>Quit Tabuffer</dd><dt>? / Esc</dt><dd>Close this help</dd>
+          <dt>/</dt><dd>Push a cumulative search; Enter accepts</dd><dt>\</dt><dd>Pop the newest search; empty stack shows all</dd><dt>T</dt><dd>Cycle Auto / Light / Dark theme</dd><dt>M</dt><dd>On a Domain header, mark the whole group</dd><dt>Enter</dt><dd>In Normal mode, activate a tab</dd><dt>r</dt><dd>Refresh</dd><dt>q</dt><dd>Quit Tabuffer</dd><dt>? / Esc</dt><dd>Close this help</dd>
       </dl></section>
+    </aside>
+    <aside id="which-key" role="dialog" aria-label="Sort by">
+      <strong>Sort by</strong>
+      <span><kbd>t</kbd> newest accessed</span>
+      <span><kbd>o</kbd> browser order</span>
+      <span><kbd>d</kbd> domain</span>
+      <span><kbd>r</kbd> reverse</span>
+      <span><kbd>Esc</kbd> cancel</span>
     </aside>
     <footer id="status">-- NORMAL --</footer>
     <script type="module" src="./main.ts"></script>

@@ -26,9 +26,11 @@ export type Command =
   | "flatView"
   | "domainView"
   | "treeView"
+  | "cycleTheme"
   | "sortAccessed"
   | "sortBrowser"
   | "sortDomain"
+  | "toggleSortDirection"
   | "left"
   | "right"
   | "quit";
@@ -62,6 +64,7 @@ const singleKeys: Readonly<Record<string, Command>> = {
   "1": "flatView",
   "2": "domainView",
   "3": "treeView",
+  T: "cycleTheme",
   h: "left",
   l: "right",
   q: "quit",
@@ -72,6 +75,7 @@ const sortKeys: Readonly<Record<string, Command>> = {
   t: "sortAccessed",
   o: "sortBrowser",
   d: "sortDomain",
+  r: "toggleSortDirection",
 };
 
 export function createInputState(): InputState {
@@ -101,9 +105,9 @@ export function handleKey(state: InputState, key: string, view: ViewMode): KeyRe
   if (key === "?") return { state: { mode: "help", pending: "" }, command: "enterHelp" };
   if (key === "/") return { state: { mode: "search", pending: "" }, command: "enterSearch" };
   if (state.pending === "g" && key === "g") return command("first");
-  if (state.pending === "s" && view === "flat" && sortKeys[key]) return command(sortKeys[key]);
+  if (state.pending === "s" && sortKeys[key]) return command(sortKeys[key]);
   if (key === "g") return { state: { mode: "normal", pending: "g" } };
-  if (key === "s" && view === "flat") return { state: { mode: "normal", pending: "s" } };
+  if (key === "s") return { state: { mode: "normal", pending: "s" } };
   return singleKeys[key] ? command(singleKeys[key]) : { state: createInputState() };
 }
 

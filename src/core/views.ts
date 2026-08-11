@@ -1,4 +1,5 @@
 import type { TabInfo } from "./tab";
+import { sortTabs, type TabSort } from "./sorting";
 
 export interface TabRow {
   kind: "tab";
@@ -10,6 +11,7 @@ export interface DomainRow {
   kind: "domain";
   rowId: string;
   domain: string;
+  favIconUrl?: string;
   tabCount: number;
   collapsed: boolean;
 }
@@ -30,10 +32,12 @@ export interface TreeTabRow extends TabRow {
 export function buildDomainRows(
   tabs: Iterable<TabInfo>,
   collapsedDomains: ReadonlySet<string> = new Set(),
+  sort: TabSort = "browser",
+  reversed = false,
 ): DomainProjectionRow[] {
   const groups = new Map<string, TabInfo[]>();
 
-  for (const tab of orderedTabs(tabs)) {
+  for (const tab of sortTabs([...tabs], sort, reversed)) {
     const group = groups.get(tab.domain);
     if (group) group.push(tab);
     else groups.set(tab.domain, [tab]);
@@ -45,6 +49,7 @@ export function buildDomainRows(
       kind: "domain",
       rowId: `domain:${domain}`,
       domain,
+      favIconUrl: sortTabs(group, "browser").find((tab) => tab.favIconUrl)?.favIconUrl,
       tabCount: group.length,
       collapsed,
     };
@@ -53,8 +58,12 @@ export function buildDomainRows(
   });
 }
 
-export function buildTabForest(tabs: Iterable<TabInfo>): TreeNode[] {
-  const ordered = orderedTabs(tabs);
+export function buildTabForest(
+  tabs: Iterable<TabInfo>,
+  sort: TabSort = "browser",
+  reversed = false,
+): TreeNode[] {
+  const ordered = sortTabs([...tabs], "browser");
   const nodes = new Map(ordered.map((tab) => [tab.id, { tab, children: [] as TreeNode[] }]));
   const parents = new Map<number, number>();
 
@@ -77,7 +86,7 @@ export function buildTabForest(tabs: Iterable<TabInfo>): TreeNode[] {
     }
   }
 
-  return roots;
+  return sortTreeNodes(roots, sort, reversed);
 }
 
 export function flattenTreeRows(
@@ -125,12 +134,13 @@ function tabRow(tab: TabInfo): TabRow {
   return { kind: "tab", rowId: `tab:${tab.id}`, tab };
 }
 
-function orderedTabs(tabs: Iterable<TabInfo>): TabInfo[] {
-  return [...tabs].sort(browserOrder);
-}
-
-function browserOrder(a: TabInfo, b: TabInfo): number {
-  return a.windowId - b.windowId || a.index - b.index;
+function sortTreeNodes(nodes: TreeNode[], sort: TabSort, reversed: boolean): TreeNode[] {
+  const byId = new Map(nodes.map((node) => [node.tab.id, node]));
+  return sortTabs(nodes.map((node) => node.tab), sort, reversed).map((tab) => {
+    const node = byId.get(tab.id)!;
+    node.children = sortTreeNodes(node.children, sort, reversed);
+    return node;
+  });
 }
 
 function findCycleIds(parents: ReadonlyMap<number, number>): Set<number> {

@@ -52,26 +52,63 @@ function setup(
   controller.state = {
     ...createAppState(tabs),
     view: controller.state.view,
-    flatSort: controller.state.flatSort,
+    sort: controller.state.sort,
+    sortReversed: controller.state.sortReversed,
+    theme: controller.state.theme,
   };
   controller.managerTabId = managerTabId;
   controller.updateRows();
   return { adapter, controller, searchInput };
 }
 
-it("restores a valid saved view and Flat sort", () => {
+it("restores valid saved view, sort, and theme preferences", () => {
   const storage = {
-    getItem: vi.fn(() => JSON.stringify({ view: "tree", flatSort: "domain" })),
+    getItem: vi.fn(() => JSON.stringify({ view: "tree", sort: "domain", sortReversed: true, theme: "dark" })),
     setItem: vi.fn(),
   };
 
   const { controller } = setup([tab(1)], null, storage);
 
   expect(controller.state.view).toBe("tree");
-  expect(controller.state.flatSort).toBe("domain");
+  expect(controller.state.sort).toBe("domain");
+  expect(controller.state.sortReversed).toBe(true);
+  expect(controller.state.theme).toBe("dark");
 });
 
-it("saves view and Flat sort changes", async () => {
+it("ignores an invalid saved sort direction", () => {
+  const storage = {
+    getItem: vi.fn(() => JSON.stringify({ sortReversed: "yes" })),
+    setItem: vi.fn(),
+  };
+
+  const { controller } = setup([tab(1)], null, storage);
+
+  expect(controller.state.sortReversed).toBe(false);
+});
+
+it("migrates a saved Flat-only sort preference", () => {
+  const storage = {
+    getItem: vi.fn(() => JSON.stringify({ flatSort: "browser" })),
+    setItem: vi.fn(),
+  };
+
+  const { controller } = setup([tab(1)], null, storage);
+
+  expect(controller.state.sort).toBe("browser");
+});
+
+it("falls back to Auto for an invalid saved theme", () => {
+  const storage = {
+    getItem: vi.fn(() => JSON.stringify({ theme: "sepia" })),
+    setItem: vi.fn(),
+  };
+
+  const { controller } = setup([tab(1)], null, storage);
+
+  expect(controller.state.theme).toBe("auto");
+});
+
+it("saves view and sort changes", async () => {
   const storage = { getItem: vi.fn(() => null), setItem: vi.fn() };
   const { controller } = setup([tab(1)], null, storage);
 
@@ -81,8 +118,77 @@ it("saves view and Flat sort changes", async () => {
 
   expect(storage.setItem).toHaveBeenLastCalledWith(
     "tabuffer.preferences",
-    JSON.stringify({ view: "flat", flatSort: "browser" }),
+    JSON.stringify({ view: "flat", sort: "browser", sortReversed: false, theme: "auto" }),
   );
+});
+
+it("cycles and saves Auto, Light, and Dark themes", async () => {
+  const storage = { getItem: vi.fn(() => null), setItem: vi.fn() };
+  const { controller } = setup([tab(1)], null, storage);
+
+  await controller.run("cycleTheme");
+  expect(controller.state.theme).toBe("light");
+  await controller.run("cycleTheme");
+  expect(controller.state.theme).toBe("dark");
+  await controller.run("cycleTheme");
+  expect(controller.state.theme).toBe("auto");
+  expect(storage.setItem).toHaveBeenLastCalledWith(
+    "tabuffer.preferences",
+    JSON.stringify({ view: "flat", sort: "lastAccessed", sortReversed: false, theme: "auto" }),
+  );
+});
+
+it("toggles and saves reverse sorting without changing the criterion", async () => {
+  const storage = { getItem: vi.fn(() => null), setItem: vi.fn() };
+  const { controller } = setup([
+    tab(1, { lastAccessed: 10 }),
+    tab(2, { lastAccessed: 100 }),
+  ], null, storage);
+
+  await controller.run("toggleSortDirection");
+  expect(controller.state.sort).toBe("lastAccessed");
+  expect(controller.state.sortReversed).toBe(true);
+  expect(controller.rows.filter((row) => row.kind === "tab").map((row) => row.tab.id)).toEqual([1, 2]);
+
+  await controller.run("toggleSortDirection");
+  expect(controller.state.sortReversed).toBe(false);
+  expect(storage.setItem).toHaveBeenLastCalledWith(
+    "tabuffer.preferences",
+    JSON.stringify({ view: "flat", sort: "lastAccessed", sortReversed: false, theme: "auto" }),
+  );
+});
+
+it("sorts Domain groups and their tabs with the shared sort", async () => {
+  const { controller } = setup([
+    tab(1, { domain: "alpha.test", url: "https://alpha.test/", lastAccessed: 10 }),
+    tab(2, { domain: "zeta.test", url: "https://zeta.test/", lastAccessed: 100 }),
+    tab(3, { domain: "alpha.test", url: "https://alpha.test/3", lastAccessed: 50 }),
+  ]);
+  await controller.run("domainView");
+
+  await controller.run("sortAccessed");
+  expect(controller.rows.map((row) => row.kind === "domain" ? row.domain : row.tab.id)).toEqual([
+    "zeta.test", 2, "alpha.test", 3, 1,
+  ]);
+
+  await controller.run("sortDomain");
+  expect(controller.rows.map((row) => row.kind === "domain" ? row.domain : row.tab.id)).toEqual([
+    "alpha.test", 1, 3, "zeta.test", 2,
+  ]);
+});
+
+it("sorts every Tree sibling set without changing parents", async () => {
+  const { controller } = setup([
+    tab(1, { domain: "zeta.test", url: "https://zeta.test/" }),
+    tab(2, { domain: "beta.test", url: "https://beta.test/", openerTabId: 1 }),
+    tab(3, { domain: "alpha.test", url: "https://alpha.test/", openerTabId: 1 }),
+    tab(4, { domain: "alpha.test", url: "https://alpha.test/root" }),
+  ]);
+  await controller.run("treeView");
+
+  await controller.run("sortDomain");
+
+  expect(controller.rows.filter((row) => row.kind === "tab").map((row) => row.tab.id)).toEqual([4, 1, 3, 2]);
 });
 
 it("marks and unmarks the current tab while advancing the cursor", async () => {
@@ -114,6 +220,59 @@ it("requires confirmation before executing deletion marks", async () => {
 
   expect(adapter.closeTabs).toHaveBeenCalledWith([1]);
   expect(adapter.closeTabs).not.toHaveBeenCalledWith([2]);
+});
+
+it("marks, confirms, and closes a pinned tab through deletion flags", async () => {
+  const { adapter, controller } = setup([tab(1, { pinned: true }), tab(2)]);
+
+  await controller.run("markDelete");
+  expect([...controller.state.deletionMarkedIds]).toEqual([1]);
+  await controller.run("requestDeleteConfirmation");
+  expect(controller.input.mode).toBe("confirmDelete");
+  await controller.run("executeDeletes");
+
+  expect(adapter.closeTabs).toHaveBeenCalledWith([1]);
+});
+
+it("unmarks a pinned deletion flag with u", async () => {
+  const { controller } = setup([tab(1, { pinned: true }), tab(2)]);
+
+  await controller.run("markDelete");
+  await controller.run("previous");
+  await controller.run("unmark");
+
+  expect([...controller.state.deletionMarkedIds]).toEqual([]);
+});
+
+it("marks a Domain header's closable tabs for deletion and advances once", async () => {
+  const { controller } = setup([
+    tab(1),
+    tab(2, { pinned: true }),
+    tab(3),
+    tab(4, { domain: "other.test", url: "https://other.test/" }),
+  ], 3);
+  await controller.run("domainView");
+  await controller.run("previous");
+
+  await controller.run("markDelete");
+
+  expect([...controller.state.deletionMarkedIds]).toEqual([1, 2]);
+  expect(controller.cursorRowId).toBe("tab:1");
+});
+
+it("marks a Tree parent's closable subtree for deletion and advances once", async () => {
+  const { controller } = setup([
+    tab(1),
+    tab(2, { openerTabId: 1 }),
+    tab(3, { openerTabId: 2, pinned: true }),
+    tab(4),
+  ]);
+  await controller.run("treeView");
+
+  await controller.run("markDelete");
+
+  expect([...controller.state.deletionMarkedIds]).toEqual([1, 2, 3]);
+  expect(controller.cursorRowId).toBe("tab:2");
 });
 
 it("does not mark pinned or manager tabs", async () => {

@@ -17,6 +17,7 @@ export const webExtensionAdapter: BrowserAdapter = {
         index: tab.index,
         url: tab.url,
         title: tab.title,
+        favIconUrl: tab.favIconUrl,
         lastAccessed: tab.lastAccessed,
         active: tab.active,
         pinned: tab.pinned,

@@ -1,7 +1,7 @@
 import type { BrowserAdapter } from "../browser/adapter";
 import { filterTabs } from "../core/filters";
 import { sortTabs, type TabSort } from "../core/sorting";
-import { createAppState, markTab, markTabForDeletion, reconcileTabs, unmarkTab, type AppState, type ViewMode } from "../core/state";
+import { createAppState, markTab, markTabForDeletion, reconcileTabs, unmarkTab, type AppState, type ThemeMode, type ViewMode } from "../core/state";
 import type { TabInfo } from "../core/tab";
 import {
   buildDomainRows,
@@ -159,9 +159,11 @@ export class Controller {
     if (command === "flatView") return this.changeView("flat");
     if (command === "domainView") return this.changeView("domain");
     if (command === "treeView") return this.changeView("tree");
+    if (command === "cycleTheme") return this.cycleTheme();
     if (command === "sortAccessed") return this.changeSort("lastAccessed");
     if (command === "sortBrowser") return this.changeSort("browser");
     if (command === "sortDomain") return this.changeSort("domain");
+    if (command === "toggleSortDirection") return this.toggleSortDirection();
     if (command === "left") return this.left();
     if (command === "right") return this.right();
     if (command === "quit" && this.managerTabId !== null) {
@@ -173,11 +175,11 @@ export class Controller {
     const tabs = this.filteredTabs();
 
     if (this.state.view === "flat") {
-      this.rows = sortTabs(tabs, this.state.flatSort).map((tab) => ({ kind: "tab", rowId: `tab:${tab.id}`, tab }));
+      this.rows = sortTabs(tabs, this.state.sort, this.state.sortReversed).map((tab) => ({ kind: "tab", rowId: `tab:${tab.id}`, tab }));
     } else if (this.state.view === "domain") {
-      this.rows = buildDomainRows(tabs, this.state.collapsedDomains);
+      this.rows = buildDomainRows(tabs, this.state.collapsedDomains, this.state.sort, this.state.sortReversed);
     } else {
-      this.rows = flattenTreeRows(buildTabForest(tabs), this.state.collapsedTreeIds);
+      this.rows = flattenTreeRows(buildTabForest(tabs, this.state.sort, this.state.sortReversed), this.state.collapsedTreeIds);
     }
 
     const fallback = this.state.cursorId === null ? null : `tab:${this.state.cursorId}`;
@@ -224,17 +226,37 @@ export class Controller {
 
   private markCurrent(mark: boolean, advance: boolean): void {
     const tab = this.currentTab();
-    if (tab && !this.isProtected(tab.id)) {
-      this.state = mark ? markTab(this.state, tab.id) : unmarkTab(this.state, tab.id);
+    if (tab) {
+      if (mark && !this.isProtected(tab.id)) this.state = markTab(this.state, tab.id);
+      if (!mark) this.state = unmarkTab(this.state, tab.id);
     }
     if (advance) this.move(1);
     else this.render();
   }
 
   private markCurrentForDeletion(): void {
-    const tab = this.currentTab();
-    if (tab && !this.isProtected(tab.id)) this.state = markTabForDeletion(this.state, tab.id);
+    for (const id of this.deletionTargetIds()) {
+      if (!this.isDeletionProtected(id)) this.state = markTabForDeletion(this.state, id);
+    }
     this.move(1);
+  }
+
+  private deletionTargetIds(): number[] {
+    const row = this.currentRow();
+    if (!row) return [];
+
+    if (row.kind === "domain") {
+      return this.filteredTabs()
+        .filter((tab) => tab.domain === row.domain)
+        .map((tab) => tab.id);
+    }
+
+    if (this.state.view === "tree" && "hasChildren" in row && row.hasChildren) {
+      const node = findTreeNode(buildTabForest(this.filteredTabs(), this.state.sort, this.state.sortReversed), row.tab.id);
+      if (node) return collectSubtreeIds(node);
+    }
+
+    return [row.tab.id];
   }
 
   private toggleCurrent(): void {
@@ -255,7 +277,7 @@ export class Controller {
       const domain = row.kind === "domain" ? row.domain : row.tab.domain;
       ids = [...this.state.tabs.values()].filter((tab) => tab.domain === domain).map((tab) => tab.id);
     } else if (row.kind === "tab") {
-      const node = findTreeNode(buildTabForest(this.state.tabs.values()), row.tab.id);
+      const node = findTreeNode(buildTabForest(this.state.tabs.values(), this.state.sort, this.state.sortReversed), row.tab.id);
       if (node) ids = collectSubtreeIds(node);
     }
 
@@ -272,7 +294,10 @@ export class Controller {
     const sourceIds = deletionsOnly ? this.state.deletionMarkedIds : this.state.markedIds;
     const ids = [...sourceIds].filter((id) => {
       const tab = liveTabs.get(id);
-      return tab && !tab.pinned && id !== managerTabId && !this.adapter.isManagerUrl(tab.url);
+      return tab
+        && (deletionsOnly || !tab.pinned)
+        && id !== managerTabId
+        && !this.adapter.isManagerUrl(tab.url);
     });
     if (!ids.length) {
       await this.refresh();
@@ -298,18 +323,38 @@ export class Controller {
     this.updateRows();
   }
 
-  private changeSort(flatSort: AppState["flatSort"]): void {
-    if (this.state.view !== "flat") return;
-    this.state = { ...this.state, flatSort };
+  private changeSort(sort: AppState["sort"]): void {
+    this.state = { ...this.state, sort };
     this.savePreferences();
     this.updateRows();
+  }
+
+  private toggleSortDirection(): void {
+    this.state = { ...this.state, sortReversed: !this.state.sortReversed };
+    this.savePreferences();
+    this.updateRows();
+  }
+
+  private cycleTheme(): void {
+    const themes: ThemeMode[] = ["auto", "light", "dark"];
+    this.state = {
+      ...this.state,
+      theme: themes[(themes.indexOf(this.state.theme) + 1) % themes.length],
+    };
+    this.savePreferences();
+    this.render();
   }
 
   private savePreferences(): void {
     try {
       this.storage?.setItem(
         "tabuffer.preferences",
-        JSON.stringify({ view: this.state.view, flatSort: this.state.flatSort }),
+        JSON.stringify({
+          view: this.state.view,
+          sort: this.state.sort,
+          sortReversed: this.state.sortReversed,
+          theme: this.state.theme,
+        }),
       );
     } catch {
       // Preferences are optional when storage is unavailable.
@@ -330,7 +375,7 @@ export class Controller {
     }
 
     const visibleTabs = this.filteredTabs();
-    const parent = findTreeParent(buildTabForest(visibleTabs), row.tab.id);
+    const parent = findTreeParent(buildTabForest(visibleTabs, this.state.sort, this.state.sortReversed), row.tab.id);
     if (parent && this.rows.some((candidate) => candidate.rowId === `tab:${parent.tab.id}`)) {
       this.select(`tab:${parent.tab.id}`);
       this.render();
@@ -383,6 +428,11 @@ export class Controller {
     return !tab || tab.pinned || id === this.managerTabId || this.adapter.isManagerUrl(tab.url);
   }
 
+  private isDeletionProtected(id: number): boolean {
+    const tab = this.state.tabs.get(id);
+    return !tab || id === this.managerTabId || this.adapter.isManagerUrl(tab.url);
+  }
+
   private filteredTabs(): TabInfo[] {
     return [...this.state.filterStack, this.state.filter]
       .filter(Boolean)
@@ -392,19 +442,29 @@ export class Controller {
 
 function readPreferences(
   storage?: Pick<Storage, "getItem">,
-): Partial<Pick<AppState, "view" | "flatSort">> {
+): Partial<Pick<AppState, "view" | "sort" | "sortReversed" | "theme">> {
   try {
     const value = JSON.parse(storage?.getItem("tabuffer.preferences") ?? "null") as {
       view?: unknown;
+      sort?: unknown;
       flatSort?: unknown;
+      sortReversed?: unknown;
+      theme?: unknown;
     } | null;
     if (!value) return {};
-    const preferences: Partial<Pick<AppState, "view" | "flatSort">> = {};
+    const preferences: Partial<Pick<AppState, "view" | "sort" | "sortReversed" | "theme">> = {};
     if (["flat", "domain", "tree"].includes(value.view as ViewMode)) {
       preferences.view = value.view as ViewMode;
     }
-    if (["lastAccessed", "browser", "domain"].includes(value.flatSort as TabSort)) {
-      preferences.flatSort = value.flatSort as TabSort;
+    const sort = value.sort ?? value.flatSort;
+    if (["lastAccessed", "browser", "domain"].includes(sort as TabSort)) {
+      preferences.sort = sort as TabSort;
+    }
+    if (typeof value.sortReversed === "boolean") {
+      preferences.sortReversed = value.sortReversed;
+    }
+    if (["auto", "light", "dark"].includes(value.theme as ThemeMode)) {
+      preferences.theme = value.theme as ThemeMode;
     }
     return preferences;
   } catch {

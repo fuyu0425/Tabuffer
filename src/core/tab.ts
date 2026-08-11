@@ -4,6 +4,7 @@ export interface BrowserTab {
   index: number;
   url?: string;
   title?: string;
+  favIconUrl?: string;
   lastAccessed?: number;
   active?: boolean;
   pinned?: boolean;
@@ -16,6 +17,7 @@ export interface TabInfo {
   index: number;
   url: string;
   title: string;
+  favIconUrl?: string;
   domain: string;
   lastAccessed: number;
   active: boolean;
@@ -32,6 +34,7 @@ export function normalizeTab(tab: BrowserTab): TabInfo {
     index: tab.index,
     url,
     title: tab.title ?? "",
+    favIconUrl: tab.favIconUrl,
     domain: domainFromUrl(url),
     lastAccessed: tab.lastAccessed ?? 0,
     active: tab.active ?? false,

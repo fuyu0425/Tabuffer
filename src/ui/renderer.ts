@@ -26,6 +26,8 @@ export class Renderer {
     this.summaryElement.textContent = `${state.tabs.size} tabs / ${state.markedIds.size + state.deletionMarkedIds.size} marked`;
     this.statusElement.textContent = statusText(state, input, rows.length);
     document.body.dataset.mode = input.mode;
+    document.body.dataset.theme = state.theme;
+    document.body.dataset.pending = input.pending;
     this.rowsElement.replaceChildren(...rows.map((row) => this.renderRow(row, model)));
 
     requestAnimationFrame(() => {
@@ -45,7 +47,7 @@ export class Renderer {
       element.append(
         cell("cursor-column", row.rowId === model.cursorRowId ? ">" : " "),
         cell("fold-column", row.collapsed ? "▶" : "▼"),
-        cell("domain-title", row.domain || "(internal pages)"),
+        domainCell("domain-title", row.domain || "(internal pages)", row.favIconUrl),
         cell("domain-count", String(row.tabCount)),
       );
       return element;
@@ -65,7 +67,7 @@ export class Renderer {
       cell("cursor-column", row.rowId === model.cursorRowId ? ">" : " "),
       cell("mark-column", deletionMarked ? "d" : model.state.markedIds.has(row.tab.id) ? "m" : row.tab.pinned ? "P" : protectedTab ? "!" : " "),
       cell("age-column", relativeAge(row.tab.lastAccessed)),
-      cell("tab-domain", tree ? "" : row.tab.domain || "—"),
+      tree ? cell("tab-domain", "") : domainCell("tab-domain", row.tab.domain || "—", row.tab.favIconUrl),
       cell("tab-title", tree ? `${treePrefix}${row.tab.title || row.tab.url}` : row.tab.title || row.tab.url),
     );
     return element;
@@ -76,6 +78,18 @@ function cell(className: string, text: string): HTMLElement {
   const element = document.createElement("span");
   element.className = className;
   element.textContent = text;
+  return element;
+}
+
+function domainCell(className: string, text: string, favIconUrl?: string): HTMLElement {
+  const element = cell(className, text);
+  if (!favIconUrl) return element;
+
+  const icon = document.createElement("img");
+  icon.className = "domain-icon";
+  icon.src = favIconUrl;
+  icon.alt = "";
+  element.prepend(icon);
   return element;
 }
 

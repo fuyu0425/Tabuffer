@@ -21,4 +21,12 @@ describe("sortTabs", () => {
   it("orders tabs by domain", () => {
     expect(sortTabs(tabs, "domain").map((tab) => tab.id)).toEqual([2, 3, 1]);
   });
+
+  it.each([
+    ["lastAccessed", [1, 3, 2]],
+    ["browser", [1, 2, 3]],
+    ["domain", [1, 3, 2]],
+  ] as const)("reverses the complete %s comparator", (sort, expected) => {
+    expect(sortTabs(tabs, sort, true).map((tab) => tab.id)).toEqual(expected);
+  });
 });

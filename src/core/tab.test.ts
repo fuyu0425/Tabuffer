@@ -20,6 +20,18 @@ describe("normalizeTab", () => {
     });
   });
 
+  it("preserves the browser-provided favicon URL", () => {
+    expect(
+      normalizeTab({
+        id: 10,
+        windowId: 2,
+        index: 6,
+        url: "https://example.com/",
+        favIconUrl: "https://example.com/favicon.ico",
+      }),
+    ).toMatchObject({ favIconUrl: "https://example.com/favicon.ico" });
+  });
+
   it("keeps non-web URLs available with an empty domain", () => {
     expect(
       normalizeTab({

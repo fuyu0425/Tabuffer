@@ -2,11 +2,14 @@ import type { TabInfo } from "./tab";
 
 export type TabSort = "lastAccessed" | "browser" | "domain";
 
-export function sortTabs(tabs: TabInfo[], sort: TabSort): TabInfo[] {
+export function sortTabs(tabs: TabInfo[], sort: TabSort, reversed = false): TabInfo[] {
   return [...tabs].sort((a, b) => {
-    if (sort === "lastAccessed") return b.lastAccessed - a.lastAccessed || browserOrder(a, b);
-    if (sort === "domain") return a.domain.localeCompare(b.domain) || browserOrder(a, b);
-    return browserOrder(a, b);
+    const order = sort === "lastAccessed"
+      ? b.lastAccessed - a.lastAccessed || browserOrder(a, b)
+      : sort === "domain"
+        ? a.domain.localeCompare(b.domain) || browserOrder(a, b)
+        : browserOrder(a, b);
+    return reversed ? -order : order;
   });
 }
 

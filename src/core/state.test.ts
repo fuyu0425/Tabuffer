@@ -35,6 +35,15 @@ const tabs: TabInfo[] = [
 ];
 
 describe("app state", () => {
+  it("defaults to the automatic system theme", () => {
+    expect(createAppState().theme).toBe("auto");
+  });
+
+  it("defaults to newest-access sorting", () => {
+    expect(createAppState().sort).toBe("lastAccessed");
+    expect(createAppState().sortReversed).toBe(false);
+  });
+
   it("preserves marks for retained tabs and removes marks for tabs absent after refresh", () => {
     const markableTabs = tabs.map((tab) => ({ ...tab, pinned: false }));
     const state = markTab(markTab(createAppState(markableTabs), 2), 1);
@@ -78,6 +87,13 @@ describe("app state", () => {
     expect([...marked.deletionMarkedIds]).toEqual([2]);
     expect([...marked.markedIds]).toEqual([]);
     expect([...reconcileTabs(marked, [tabs[1]]).deletionMarkedIds]).toEqual([]);
+  });
+
+  it("allows and retains a deletion mark when a tab is pinned", () => {
+    const marked = markTabForDeletion(createAppState(tabs), 1);
+
+    expect([...marked.deletionMarkedIds]).toEqual([1]);
+    expect([...reconcileTabs(marked, tabs).deletionMarkedIds]).toEqual([1]);
   });
 
 });
