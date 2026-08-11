@@ -1,7 +1,7 @@
 import type { BrowserAdapter } from "../browser/adapter";
 import { filterTabs } from "../core/filters";
 import { sortTabs } from "../core/sorting";
-import { createAppState, markTab, reconcileTabs, unmarkTab, type AppState, type ViewMode } from "../core/state";
+import { createAppState, markTab, markTabForDeletion, reconcileTabs, unmarkTab, type AppState, type ViewMode } from "../core/state";
 import type { TabInfo } from "../core/tab";
 import {
   buildDomainRows,
@@ -93,14 +93,16 @@ export class Controller {
     if (command === "first") return this.moveTo(0);
     if (command === "last") return this.moveTo(this.rows.length - 1);
     if (command === "mark") return this.markCurrent(true, true);
+    if (command === "markDelete") return this.markCurrentForDeletion();
     if (command === "unmark") return this.markCurrent(false, true);
     if (command === "toggleMark") return this.toggleCurrent();
     if (command === "unmarkAll") {
-      this.state = { ...this.state, markedIds: new Set() };
+      this.state = { ...this.state, markedIds: new Set(), deletionMarkedIds: new Set() };
       return this.render();
     }
     if (command === "markGroup") return this.markGroup();
     if (command === "deleteMarked") return this.deleteMarked();
+    if (command === "executeDeletes") return this.deleteMarked(true);
     if (command === "activate") return this.activateCurrent();
     if (command === "enterSearch") {
       this.render();
@@ -188,6 +190,12 @@ export class Controller {
     else this.render();
   }
 
+  private markCurrentForDeletion(): void {
+    const tab = this.currentTab();
+    if (tab && !this.isProtected(tab.id)) this.state = markTabForDeletion(this.state, tab.id);
+    this.move(1);
+  }
+
   private toggleCurrent(): void {
     const tab = this.currentTab();
     if (!tab || this.isProtected(tab.id)) return this.render();
@@ -214,21 +222,24 @@ export class Controller {
     this.render();
   }
 
-  private async deleteMarked(): Promise<void> {
+  private async deleteMarked(deletionsOnly = false): Promise<void> {
     const [tabs, managerTabId] = await Promise.all([
       this.adapter.getTabs(),
       this.adapter.getManagerTabId(),
     ]);
     const liveTabs = new Map(tabs.map((tab) => [tab.id, tab]));
-    const ids = [...this.state.markedIds].filter((id) => {
+    const sourceIds = deletionsOnly ? this.state.deletionMarkedIds : this.state.markedIds;
+    const ids = [...sourceIds].filter((id) => {
       const tab = liveTabs.get(id);
       return tab && !tab.pinned && id !== managerTabId && !this.adapter.isManagerUrl(tab.url);
     });
     if (!ids.length) return;
     await this.adapter.closeTabs(ids);
-    const markedIds = new Set(this.state.markedIds);
-    for (const id of ids) markedIds.delete(id);
-    this.state = { ...this.state, markedIds };
+    const remainingIds = new Set(deletionsOnly ? this.state.deletionMarkedIds : this.state.markedIds);
+    for (const id of ids) remainingIds.delete(id);
+    this.state = deletionsOnly
+      ? { ...this.state, deletionMarkedIds: remainingIds }
+      : { ...this.state, markedIds: remainingIds };
     await this.refresh();
   }
 

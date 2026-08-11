@@ -63,6 +63,20 @@ it("marks and unmarks the current tab while advancing the cursor", async () => {
   expect(controller.cursorRowId).toBe("tab:2");
 });
 
+it("marks tabs for deletion with d and executes only those marks with x", async () => {
+  const { adapter, controller } = setup([tab(1), tab(2), tab(3)]);
+
+  await controller.run("markDelete");
+  expect([...controller.state.deletionMarkedIds]).toEqual([1]);
+  expect(controller.cursorRowId).toBe("tab:2");
+
+  await controller.run("mark");
+  await controller.run("executeDeletes");
+
+  expect(adapter.closeTabs).toHaveBeenCalledWith([1]);
+  expect(adapter.closeTabs).not.toHaveBeenCalledWith([2]);
+});
+
 it("does not mark pinned or manager tabs", async () => {
   const { controller } = setup([tab(1, { pinned: true }), tab(2), tab(3)], 2);
 

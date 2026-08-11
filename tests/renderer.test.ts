@@ -89,3 +89,28 @@ describe("statusText", () => {
     );
   });
 });
+
+it("renders a deletion mark as d in the marker column", () => {
+  const state = createAppState([tab(now)]);
+  state.deletionMarkedIds.add(1);
+  const { document } = parseHTML("<html><body><div id='rows'></div><div id='summary'></div><div id='status'></div><input id='search'></body></html>");
+  vi.stubGlobal("document", document);
+  vi.stubGlobal("requestAnimationFrame", vi.fn());
+  const rows = document.getElementById("rows") as unknown as HTMLElement;
+  const renderer = new Renderer(
+    rows,
+    document.getElementById("summary") as unknown as HTMLElement,
+    document.getElementById("status") as unknown as HTMLElement,
+    document.getElementById("search") as unknown as HTMLInputElement,
+  );
+
+  renderer.render({
+    state,
+    input: createInputState(),
+    rows: [{ kind: "tab", rowId: "tab:1", tab: tab(now), depth: 0, hasChildren: false, collapsed: false }],
+    cursorRowId: "tab:1",
+    isProtected: () => false,
+  });
+
+  expect(rows.querySelector(".mark-column")?.textContent).toBe("d");
+});

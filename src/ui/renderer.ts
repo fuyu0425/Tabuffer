@@ -23,7 +23,7 @@ export class Renderer {
 
   render(model: RenderModel): void {
     const { state, rows, cursorRowId, input } = model;
-    this.summaryElement.textContent = `${state.tabs.size} tabs / ${state.markedIds.size} marked`;
+    this.summaryElement.textContent = `${state.tabs.size} tabs / ${state.markedIds.size + state.deletionMarkedIds.size} marked`;
     this.statusElement.textContent = statusText(state, input, rows.length);
     document.body.dataset.mode = input.mode;
     this.rowsElement.replaceChildren(...rows.map((row) => this.renderRow(row, model)));
@@ -52,7 +52,8 @@ export class Renderer {
     }
 
     const protectedTab = model.isProtected(row.tab.id);
-    element.classList.toggle("marked", model.state.markedIds.has(row.tab.id));
+    const deletionMarked = model.state.deletionMarkedIds.has(row.tab.id);
+    element.classList.toggle("marked", model.state.markedIds.has(row.tab.id) || deletionMarked);
     element.classList.toggle("protected", protectedTab);
     element.classList.toggle("active", row.tab.active);
     const tree = "depth" in row;
@@ -62,7 +63,7 @@ export class Renderer {
 
     element.append(
       cell("cursor-column", row.rowId === model.cursorRowId ? ">" : " "),
-      cell("mark-column", model.state.markedIds.has(row.tab.id) ? "m" : row.tab.pinned ? "P" : protectedTab ? "!" : " "),
+      cell("mark-column", deletionMarked ? "d" : model.state.markedIds.has(row.tab.id) ? "m" : row.tab.pinned ? "P" : protectedTab ? "!" : " "),
       cell("age-column", relativeAge(row.tab.lastAccessed)),
       cell("tab-domain", tree ? "" : row.tab.domain || "—"),
       cell("tab-title", tree ? `${treePrefix}${row.tab.title || row.tab.url}` : row.tab.title || row.tab.url),

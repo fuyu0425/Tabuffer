@@ -5,5 +5,6 @@ export function statusText(state: AppState, input: InputState, visibleRows: numb
   const mode = input.mode === "search" ? "SEARCH" : "NORMAL";
   const view = state.view === "flat" ? `${state.view} · ${state.flatSort}` : state.view;
   const filter = state.filter ? ` · /${state.filter}` : "";
-  return `-- ${mode} --  ${view} · ${state.tabs.size} tabs · ${state.markedIds.size} marked${filter} · ${visibleRows} rows  · j/k move · d mark-delete · x execute · / search · q quit`;
+  const marked = state.markedIds.size + state.deletionMarkedIds.size;
+  return `-- ${mode} --  ${view} · ${state.tabs.size} tabs · ${marked} marked${filter} · ${visibleRows} rows  · j/k move · d mark-delete · x execute · / search · q quit`;
 }

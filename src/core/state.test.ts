@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   createAppState,
+  markTabForDeletion,
   markTab,
   reconcileTabs,
   unmarkTab,
@@ -69,6 +70,14 @@ describe("app state", () => {
     const refreshed = reconcileTabs(marked, [{ ...tabs[0], pinned: true }, tabs[1]]);
 
     expect([...refreshed.markedIds]).toEqual([]);
+  });
+
+  it("keeps deletion marks separate and removes them when tabs disappear", () => {
+    const marked = markTabForDeletion(createAppState(tabs), 2);
+
+    expect([...marked.deletionMarkedIds]).toEqual([2]);
+    expect([...marked.markedIds]).toEqual([]);
+    expect([...reconcileTabs(marked, [tabs[1]]).deletionMarkedIds]).toEqual([]);
   });
 
 });

@@ -6,11 +6,13 @@ export type Command =
   | "first"
   | "last"
   | "mark"
+  | "markDelete"
   | "unmark"
   | "unmarkAll"
   | "toggleMark"
   | "markGroup"
   | "deleteMarked"
+  | "executeDeletes"
   | "activate"
   | "enterSearch"
   | "leaveSearch"
@@ -37,16 +39,18 @@ export interface KeyResult {
 
 const singleKeys: Readonly<Record<string, Command>> = {
   j: "next",
+  ArrowDown: "next",
   k: "previous",
+  ArrowUp: "previous",
   G: "last",
   m: "mark",
-  d: "mark",
+  d: "markDelete",
   u: "unmark",
   U: "unmarkAll",
   "*": "toggleMark",
   M: "markGroup",
   D: "deleteMarked",
-  x: "deleteMarked",
+  x: "executeDeletes",
   Enter: "activate",
   r: "refresh",
   "1": "flatView",
