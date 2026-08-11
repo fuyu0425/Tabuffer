@@ -5,6 +5,11 @@
   "type": "module",
   "scripts": {
     "build": "wxt build",
+    "build:chrome": "wxt build --browser chrome",
+    "build:firefox": "wxt build --browser firefox",
+    "package": "npm run package:chrome && npm run package:firefox",
+    "package:chrome": "wxt zip --browser chrome",
+    "package:firefox": "wxt zip --browser firefox && node scripts/create-firefox-xpi.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

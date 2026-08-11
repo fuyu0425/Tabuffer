@@ -15,14 +15,21 @@ export default defineConfig({
   zip: {
     excludeSources: ["docs/superpowers/**"],
   },
-  manifest: {
+  manifest: ({ browser }) => ({
     name: "Tabuffer",
     description: "A keyboard-first tab manager.",
+    ...(browser === "firefox" ? {
+      browser_specific_settings: {
+        gecko: {
+          id: "tabuffer@fuyu0425.github.io",
+        },
+      },
+    } : {}),
     permissions: ["tabs"],
     icons,
     action: {
       default_title: "Open Tabuffer",
       default_icon: icons,
     },
-  },
+  }),
 });
