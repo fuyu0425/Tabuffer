@@ -10,6 +10,24 @@
 
 Tabuffer turns your open tabs into a fast, searchable buffer list. Navigate without leaving the keyboard, switch between flat, domain, and opener-tree views, mark several tabs, and close them as one deliberate operation.
 
+## Demo
+
+**Domain view**
+
+![Tabuffer in Chrome showing tabs grouped by domain](docs/images/tabuffer-chrome.png)
+
+**Flat view**
+
+![Tabuffer in Chrome showing a flat tab list](docs/images/tabuffer-flat.png)
+
+**Sort menu**
+
+![Tabuffer which-key menu offering sort choices](docs/images/tabuffer-sort-menu.png)
+
+**Help menu**
+
+![Tabuffer keyboard help menu](docs/images/tabuffer-help.png)
+
 > [!NOTE]
 > Tabuffer is preparing for Firefox Add-ons and the Chrome Web Store. Until those listings are available, install it from source using the instructions below.
 
