@@ -73,9 +73,12 @@ describe("statusText", () => {
   });
 
   it("includes NORMAL mode, view/sort, total tabs, and global marks", () => {
-    expect(statusText(state(), createInputState(), 2)).toContain(
+    const status = statusText(state(), createInputState(), 2);
+
+    expect(status).toContain(
       "-- NORMAL --  flat · lastAccessed · 2 tabs · 1 marked · 2 rows",
     );
+    expect(status).toContain("d mark-delete · x execute");
   });
 
   it("includes SEARCH mode and the active filter", () => {
