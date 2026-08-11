@@ -50,6 +50,10 @@ export class Controller {
     this.input = result.state;
 
     if (this.input.mode === "search" && !result.command) return;
+    if (this.input.mode === "help" && !result.command) {
+      event.preventDefault();
+      return;
+    }
     if (!result.command && result.state.pending === "") return;
 
     event.preventDefault();
@@ -114,6 +118,7 @@ export class Controller {
       this.renderer.searchInput.blur();
       return this.render();
     }
+    if (command === "enterHelp" || command === "leaveHelp") return this.render();
     if (command === "refresh") return this.refresh();
     if (command === "flatView") return this.changeView("flat");
     if (command === "domainView") return this.changeView("domain");

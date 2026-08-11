@@ -92,3 +92,26 @@ describe("search input mode", () => {
     });
   });
 });
+
+describe("help mode", () => {
+  it("opens with ? and closes with ?, q, or Escape", () => {
+    const opened = handleKey(createInputState(), "?", "flat");
+
+    expect(opened).toEqual({
+      state: { mode: "help", pending: "" },
+      command: "enterHelp",
+    });
+    for (const key of ["?", "q", "Escape"]) {
+      expect(handleKey(opened.state, key, "flat")).toEqual({
+        state: createInputState(),
+        command: "leaveHelp",
+      });
+    }
+  });
+
+  it("suspends normal commands while help is open", () => {
+    expect(handleKey({ mode: "help", pending: "" }, "d", "flat")).toEqual({
+      state: { mode: "help", pending: "" },
+    });
+  });
+});

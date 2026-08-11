@@ -76,16 +76,22 @@ describe("statusText", () => {
     const status = statusText(state(), createInputState(), 2);
 
     expect(status).toContain(
-      "-- NORMAL --  flat · lastAccessed · 2 tabs · 1 marked · 2 rows",
+      "-- NORMAL --  Flat · newest accessed · 2 tabs · 1 marked · 2 rows",
     );
     expect(status).toContain("d mark-delete · x execute");
+  });
+
+  it("labels help mode clearly", () => {
+    expect(statusText(state(), { mode: "help", pending: "" }, 2)).toContain(
+      "-- HELP --  Flat · newest accessed",
+    );
   });
 
   it("includes SEARCH mode and the active filter", () => {
     const input: InputState = { mode: "search", pending: "" };
 
     expect(statusText(state({ view: "domain", filter: "docs" }), input, 3)).toContain(
-      "-- SEARCH --  domain · 2 tabs · 1 marked · /docs · 3 rows",
+      "-- SEARCH --  Domain groups · 2 tabs · 1 marked · /docs · 3 rows",
     );
   });
 });

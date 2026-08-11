@@ -16,6 +16,8 @@ export type Command =
   | "activate"
   | "enterSearch"
   | "leaveSearch"
+  | "enterHelp"
+  | "leaveHelp"
   | "refresh"
   | "flatView"
   | "domainView"
@@ -28,7 +30,7 @@ export type Command =
   | "quit";
 
 export interface InputState {
-  mode: "normal" | "search";
+  mode: "normal" | "search" | "help";
   pending: "" | "g" | "s";
 }
 
@@ -72,6 +74,12 @@ export function createInputState(): InputState {
 }
 
 export function handleKey(state: InputState, key: string, view: ViewMode): KeyResult {
+  if (state.mode === "help") {
+    return key === "Escape" || key === "q" || key === "?"
+      ? { state: createInputState(), command: "leaveHelp" }
+      : { state };
+  }
+
   if (state.mode === "search") {
     return key === "Escape"
       ? { state: createInputState(), command: "leaveSearch" }
@@ -79,6 +87,7 @@ export function handleKey(state: InputState, key: string, view: ViewMode): KeyRe
   }
 
   if (key === "Escape") return { state: createInputState() };
+  if (key === "?") return { state: { mode: "help", pending: "" }, command: "enterHelp" };
   if (key === "/") return { state: { mode: "search", pending: "" }, command: "enterSearch" };
   if (state.pending === "g" && key === "g") return command("first");
   if (state.pending === "s" && view === "flat" && sortKeys[key]) return command(sortKeys[key]);

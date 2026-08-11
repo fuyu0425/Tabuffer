@@ -42,6 +42,25 @@ body[data-mode="search"] #search,
 body[data-mode="search"] #search-input { display: inline-block; }
 
 #rows { padding: .35rem 0; }
+#help {
+  background: #191d25;
+  border: 1px solid #5f87d7;
+  box-shadow: 0 1rem 3rem #000a;
+  display: none;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  inset: 3.5rem 2rem auto;
+  max-height: calc(100vh - 6rem);
+  overflow: auto;
+  padding: 1rem 1.25rem;
+  position: fixed;
+  z-index: 2;
+}
+body[data-mode="help"] #help { display: grid; }
+#help h2 { color: #f0c674; grid-column: 1 / -1; margin: 0 0 .5rem; }
+#help h3 { color: #81a2be; margin: .5rem 0; }
+#help dl { display: grid; grid-template-columns: 8ch 1fr; margin: 0; }
+#help dt { color: #f0c674; font-weight: 700; }
+#help dd { margin: 0; }
 .row {
   display: grid;
   grid-template-columns: 2ch 2ch 6ch minmax(14ch, 25ch) 1fr;
