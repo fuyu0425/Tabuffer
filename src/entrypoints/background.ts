@@ -6,8 +6,8 @@ import { webExtensionAdapter } from "../browser/webextension";
 export default defineBackground(() => {
   let opening: Promise<void> | undefined;
 
-  browser.commands.onCommand.addListener((command) => {
-    if (command !== "open-tabuffer" || opening) return;
+  browser.action.onClicked.addListener(() => {
+    if (opening) return;
     opening = webExtensionAdapter.openOrFocusManager()
       .catch(console.error)
       .finally(() => { opening = undefined; });
