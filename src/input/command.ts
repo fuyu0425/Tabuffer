@@ -89,7 +89,7 @@ export function handleKey(state: InputState, key: string, view: ViewMode): KeyRe
   }
 
   if (state.mode === "search") {
-    return key === "Escape"
+    return key === "Escape" || key === "Enter"
       ? { state: createInputState(), command: "leaveSearch" }
       : { state };
   }

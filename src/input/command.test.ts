@@ -86,6 +86,13 @@ describe("search input mode", () => {
     });
   });
 
+  it("accepts the current filter and returns to normal mode on Enter", () => {
+    expect(handleKey({ mode: "search", pending: "" }, "Enter", "domain")).toEqual({
+      state: createInputState(),
+      command: "leaveSearch",
+    });
+  });
+
   it("clears a pending normal-mode prefix on Escape", () => {
     expect(handleKey({ mode: "normal", pending: "g" }, "Escape", "flat")).toEqual({
       state: createInputState(),
