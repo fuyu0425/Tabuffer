@@ -9,7 +9,12 @@ export default defineConfig({
     permissions: ["tabs"],
     commands: {
       "open-tabuffer": {
-        suggested_key: { default: "Alt+Shift+T" },
+        suggested_key: {
+          default: "Ctrl+Shift+Period",
+          linux: "Ctrl+Shift+Period",
+          mac: "Command+Shift+Period",
+          windows: "Ctrl+Shift+Period",
+        },
         description: "Open Tabuffer",
       },
     },

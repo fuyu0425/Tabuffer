@@ -2,9 +2,10 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "skipLibCheck": true,
     "strict": true,
     "target": "ES2022",
     "types": ["vitest/globals"]
   },
-  "include": ["src"]
+  "include": ["src", "tests", "wxt.config.ts"]
 }
