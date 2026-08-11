@@ -215,7 +215,15 @@ export class Controller {
   }
 
   private async deleteMarked(): Promise<void> {
-    const ids = [...this.state.markedIds].filter((id) => !this.isProtected(id));
+    const [tabs, managerTabId] = await Promise.all([
+      this.adapter.getTabs(),
+      this.adapter.getManagerTabId(),
+    ]);
+    const liveTabs = new Map(tabs.map((tab) => [tab.id, tab]));
+    const ids = [...this.state.markedIds].filter((id) => {
+      const tab = liveTabs.get(id);
+      return tab && !tab.pinned && id !== managerTabId && !this.adapter.isManagerUrl(tab.url);
+    });
     if (!ids.length) return;
     await this.adapter.closeTabs(ids);
     const markedIds = new Set(this.state.markedIds);

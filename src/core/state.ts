@@ -32,10 +32,8 @@ export function createAppState(tabs: TabInfo[] = []): AppState {
 export function reconcileTabs(
   state: AppState,
   tabs: TabInfo[],
-  visibleTabIds?: Iterable<number>,
 ): AppState {
   const tabMap = toTabMap(tabs);
-  const visibleIds = visibleTabIds ? new Set(visibleTabIds) : undefined;
   const markedIds = new Set(
     [...state.markedIds].filter((id) => {
       const tab = tabMap.get(id);
@@ -47,9 +45,9 @@ export function reconcileTabs(
     ...state,
     tabs: tabMap,
     markedIds,
-    cursorId: state.cursorId !== null && tabMap.has(state.cursorId) && (!visibleIds || visibleIds.has(state.cursorId))
+    cursorId: state.cursorId !== null && tabMap.has(state.cursorId)
       ? state.cursorId
-      : firstTabId(tabMap, visibleIds),
+      : firstTabId(tabMap),
   };
 }
 
@@ -72,14 +70,7 @@ function toTabMap(tabs: TabInfo[]): Map<number, TabInfo> {
   return new Map(tabs.map((tab) => [tab.id, tab]));
 }
 
-function firstTabId(tabs: Map<number, TabInfo>, visibleTabIds?: ReadonlySet<number>): number | null {
-  if (visibleTabIds) {
-    for (const id of visibleTabIds) {
-      if (tabs.has(id)) return id;
-    }
-    return null;
-  }
-
+function firstTabId(tabs: Map<number, TabInfo>): number | null {
   const first = [...tabs.values()].sort(browserOrder)[0];
   return first?.id ?? null;
 }

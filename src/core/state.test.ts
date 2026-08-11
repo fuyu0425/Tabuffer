@@ -71,17 +71,4 @@ describe("app state", () => {
     expect([...refreshed.markedIds]).toEqual([]);
   });
 
-  it("moves a disappeared cursor to the first supplied visible tab", () => {
-    const state = { ...createAppState(tabs), cursorId: 2 };
-    const refreshed = reconcileTabs(state, [tabs[1], { ...tabs[0], id: 3, index: 2 }], [3]);
-
-    expect(refreshed.cursorId).toBe(3);
-  });
-
-  it("moves a retained but hidden cursor to the first supplied visible tab", () => {
-    const state = { ...createAppState(tabs), cursorId: 2 };
-    const refreshed = reconcileTabs(state, tabs, [1]);
-
-    expect(refreshed.cursorId).toBe(1);
-  });
 });

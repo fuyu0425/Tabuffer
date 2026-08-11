@@ -27,10 +27,6 @@ export interface TreeTabRow extends TabRow {
   collapsed: boolean;
 }
 
-export function buildFlatRows(tabs: Iterable<TabInfo>): TabRow[] {
-  return orderedTabs(tabs).map(tabRow);
-}
-
 export function buildDomainRows(
   tabs: Iterable<TabInfo>,
   collapsedDomains: ReadonlySet<string> = new Set(),

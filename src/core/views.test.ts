@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildDomainRows,
-  buildFlatRows,
   buildTabForest,
   collectSubtreeIds,
   flattenTreeRows,
@@ -29,10 +28,6 @@ const tab = (
 });
 
 describe("row projections", () => {
-  it("uses browser window and index order for flat rows", () => {
-    expect(buildFlatRows([tab(3, 2, 0), tab(2, 1, 1), tab(1, 1, 0)]).map((row) => row.tab.id)).toEqual([1, 2, 3]);
-  });
-
   it("groups domains by first browser occurrence and omits collapsed domain tabs", () => {
     const rows = buildDomainRows(
       [tab(3, 2, 0, "beta.test"), tab(2, 1, 1, "alpha.test"), tab(1, 1, 0, "beta.test")],
