@@ -1,4 +1,4 @@
-import { expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 
 import type { BrowserAdapter } from "../browser/adapter";
 import { createAppState, markTab, type AppState } from "../core/state";
@@ -30,7 +30,11 @@ type TestController = {
   refresh(): Promise<void>;
   updateRows(preferredRowId?: string | null): void;
   onSearchInput(): void;
+  pageLength(): number;
+  onKeyDown(event: KeyboardEvent): void;
 };
+
+afterEach(() => vi.unstubAllGlobals());
 
 function setup(
   tabs: TabInfo[],
@@ -204,6 +208,60 @@ it("marks and unmarks the current tab while advancing the cursor", async () => {
   expect(controller.cursorRowId).toBe("tab:2");
 });
 
+it("moves the cursor by a visible page", async () => {
+  const { controller } = setup(Array.from({ length: 25 }, (_, index) => tab(index + 1)));
+
+  await controller.run("nextPage");
+  expect(controller.cursorRowId).toBe("tab:11");
+
+  await controller.run("previousPage");
+  expect(controller.cursorRowId).toBe("tab:1");
+});
+
+it("aligns page-down at the top and page-up at the bottom like ibuffer", async () => {
+  const { controller } = setup(Array.from({ length: 25 }, (_, index) => tab(index + 1)));
+  const render = vi.mocked((controller as unknown as { renderer: Renderer }).renderer.render);
+
+  await controller.run("nextPage");
+  expect(render).toHaveBeenLastCalledWith(expect.objectContaining({ cursorScrollBlock: "start" }));
+
+  await controller.run("previousPage");
+  expect(render).toHaveBeenLastCalledWith(expect.objectContaining({ cursorScrollBlock: "end" }));
+});
+
+it("measures a page between the fixed header and footer with row overlap", () => {
+  const { controller } = setup([tab(1)]);
+  const rect = (top: number, bottom: number, height: number) => ({ top, bottom, height });
+  vi.stubGlobal("window", { innerHeight: 800 });
+  vi.stubGlobal("document", {
+    querySelector: (selector: string) => ({
+      getBoundingClientRect: () => selector === ".row"
+        ? rect(-1_000, -980, 20)
+        : selector === "header"
+          ? rect(0, 60, 60)
+          : rect(780, 800, 20),
+    }),
+  });
+
+  expect(controller.pageLength()).toBe(34);
+});
+
+it("D on a domain flags its children and selects the next domain", async () => {
+  const { adapter, controller } = setup([
+    tab(1, { domain: "alpha.test", url: "https://alpha.test/1" }),
+    tab(2, { domain: "alpha.test", url: "https://alpha.test/2", pinned: true }),
+    tab(3, { domain: "beta.test", url: "https://beta.test/" }),
+  ]);
+  await controller.run("domainView");
+  await controller.run("previous");
+
+  await controller.run("deleteMarked");
+
+  expect([...controller.state.deletionMarkedIds]).toEqual([1, 2]);
+  expect(controller.cursorRowId).toBe("domain:beta.test");
+  expect(adapter.closeTabs).not.toHaveBeenCalled();
+});
+
 it("requires confirmation before executing deletion marks", async () => {
   const { adapter, controller } = setup([tab(1), tab(2), tab(3)]);
 
@@ -244,7 +302,7 @@ it("unmarks a pinned deletion flag with u", async () => {
   expect([...controller.state.deletionMarkedIds]).toEqual([]);
 });
 
-it("marks a Domain header's closable tabs for deletion and advances once", async () => {
+it("d on a Domain header flags its children and selects the next domain", async () => {
   const { controller } = setup([
     tab(1),
     tab(2, { pinned: true }),
@@ -257,7 +315,70 @@ it("marks a Domain header's closable tabs for deletion and advances once", async
   await controller.run("markDelete");
 
   expect([...controller.state.deletionMarkedIds]).toEqual([1, 2]);
-  expect(controller.cursorRowId).toBe("tab:1");
+  expect(controller.cursorRowId).toBe("domain:other.test");
+});
+
+it("u on a Domain header clears its child marks and selects the next domain", async () => {
+  const { controller } = setup([
+    tab(1, { domain: "alpha.test", url: "https://alpha.test/1" }),
+    tab(2, { domain: "alpha.test", url: "https://alpha.test/2", pinned: true }),
+    tab(3, { domain: "beta.test", url: "https://beta.test/" }),
+  ]);
+  await controller.run("domainView");
+  await controller.run("previous");
+  controller.state = {
+    ...controller.state,
+    markedIds: new Set([1]),
+    deletionMarkedIds: new Set([2]),
+  };
+
+  await controller.run("unmark");
+
+  expect([...controller.state.markedIds]).toEqual([]);
+  expect([...controller.state.deletionMarkedIds]).toEqual([]);
+  expect(controller.cursorRowId).toBe("domain:beta.test");
+});
+
+it("J and K jump between Domain headers", async () => {
+  const { controller } = setup([
+    tab(1, { domain: "alpha.test", url: "https://alpha.test/1" }),
+    tab(2, { domain: "alpha.test", url: "https://alpha.test/2" }),
+    tab(3, { domain: "beta.test", url: "https://beta.test/" }),
+    tab(4, { domain: "gamma.test", url: "https://gamma.test/" }),
+  ]);
+  await controller.run("domainView");
+
+  await controller.run("nextDomain");
+  expect(controller.cursorRowId).toBe("domain:beta.test");
+  await controller.run("nextDomain");
+  expect(controller.cursorRowId).toBe("domain:gamma.test");
+  await controller.run("nextDomain");
+  expect(controller.cursorRowId).toBe("domain:gamma.test");
+  await controller.run("previousDomain");
+  expect(controller.cursorRowId).toBe("domain:beta.test");
+});
+
+it("normalizes shifted arrows to Domain jumps", async () => {
+  const { controller } = setup([
+    tab(1, { domain: "alpha.test", url: "https://alpha.test/" }),
+    tab(2, { domain: "beta.test", url: "https://beta.test/" }),
+  ]);
+  await controller.run("domainView");
+  await controller.run("previous");
+  const preventDefault = vi.fn();
+
+  controller.onKeyDown({
+    key: "ArrowDown",
+    shiftKey: true,
+    metaKey: false,
+    ctrlKey: false,
+    altKey: false,
+    preventDefault,
+  } as unknown as KeyboardEvent);
+  await Promise.resolve();
+
+  expect(controller.cursorRowId).toBe("domain:beta.test");
+  expect(preventDefault).toHaveBeenCalled();
 });
 
 it("marks a Tree parent's closable subtree for deletion and advances once", async () => {

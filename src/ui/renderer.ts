@@ -10,6 +10,7 @@ export interface RenderModel {
   rows: VisibleRow[];
   cursorRowId: string | null;
   input: InputState;
+  cursorScrollBlock?: ScrollLogicalPosition;
   isProtected(id: number): boolean;
 }
 
@@ -31,7 +32,9 @@ export class Renderer {
     this.rowsElement.replaceChildren(...rows.map((row) => this.renderRow(row, model)));
 
     requestAnimationFrame(() => {
-      this.rowsElement.querySelector<HTMLElement>(".row.cursor")?.scrollIntoView({ block: "nearest" });
+      this.rowsElement.querySelector<HTMLElement>(".row.cursor")?.scrollIntoView({
+        block: model.cursorScrollBlock ?? "nearest",
+      });
     });
   }
 

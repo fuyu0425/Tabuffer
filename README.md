@@ -71,6 +71,8 @@ Auto is the default theme and follows the browser's current system color scheme.
 | --- | --- |
 | `j` / `↓` | Select the next row |
 | `k` / `↑` | Select the previous row |
+| `J` / `K` or `Shift+↓` / `Shift+↑` | Select the next / previous Domain header in Domain view |
+| `Page Down` / `Page Up` | Select the next / previous visible page |
 | `gg` / `G` | Select the first / last row |
 | `h` / `l` | Collapse / expand a domain or tree branch |
 | `Enter` | Activate the selected tab |
@@ -92,12 +94,12 @@ Search matches tab titles, URLs, and domains. Accepted searches are cumulative a
 
 | Key | Action |
 | --- | --- |
-| `d` | Flag the selected tab, Domain group, or Tree subtree for deletion, then move down |
+| `d` | Flag a tab or Tree subtree and move down; on a Domain header, flag its children and jump to another domain |
 | `x` | Ask to execute deletion flags; confirm with `y` or cancel with `n` |
-| `m` / `u` | Add / remove an ordinary mark and move down |
+| `m` / `u` | Add / remove a mark and move down; on a Domain header, `u` clears all child marks and jumps |
 | `*` | Toggle an ordinary mark without moving |
 | `M` | Mark the selected domain or opener subtree |
-| `D` | Close all ordinarily marked tabs |
+| `D` | On a Domain header, flag its children and jump to another domain; otherwise close ordinary marks |
 | `U` | Clear every mark and deletion flag |
 
 Deletion flags may include pinned tabs, so `d`, `x`, and `y` can deliberately close them. Ordinary `m`/`M` marks still exclude pinned tabs, and the Tabuffer manager tab is always protected.

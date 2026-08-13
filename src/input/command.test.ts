@@ -6,8 +6,10 @@ describe("normal mode commands", () => {
   it.each([
     ["j", "next"],
     ["ArrowDown", "next"],
+    ["PageDown", "nextPage"],
     ["k", "previous"],
     ["ArrowUp", "previous"],
+    ["PageUp", "previousPage"],
     ["G", "last"],
     ["m", "mark"],
     ["d", "markDelete"],
@@ -38,6 +40,20 @@ describe("normal mode commands", () => {
       state: createInputState(),
       command: "first",
     });
+  });
+
+  it.each([
+    ["J", "nextDomain"],
+    ["K", "previousDomain"],
+    ["Shift+ArrowDown", "nextDomain"],
+    ["Shift+ArrowUp", "previousDomain"],
+  ] as const)("maps %s to %s in Domain view", (key, command) => {
+    expect(handleKey(createInputState(), key, "domain")).toMatchObject({ command });
+  });
+
+  it.each(["J", "K"])("leaves %s unused outside Domain view", (key) => {
+    expect(handleKey(createInputState(), key, "flat").command).toBeUndefined();
+    expect(handleKey(createInputState(), key, "tree").command).toBeUndefined();
   });
 
   it.each([

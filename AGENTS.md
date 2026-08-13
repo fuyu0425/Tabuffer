@@ -45,6 +45,8 @@ Tabuffer is a keyboard-first, browser-neutral tab manager inspired by Emacs `ibu
 - Domain sorting orders groups and children. Tree sorting recursively orders siblings without changing opener parents.
 - `T` cycles themes in the exact order Auto, Light, Dark; Auto follows `prefers-color-scheme`.
 - `j`/`k` and arrow keys move selection without scrolling the page independently.
+- In Domain view, `J`/`K` and Shift+Down/Shift+Up select the next/previous Domain header.
+- Page Down/Page Up move the cursor by one visible page and keep it visible.
 - Domain groups choose the first available browser-provided favicon in browser order. Missing favicons render no placeholder.
 - Tabuffer must never close itself as part of a bulk operation.
 

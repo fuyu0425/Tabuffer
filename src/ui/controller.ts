@@ -49,7 +49,10 @@ export class Controller {
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (event.metaKey || event.ctrlKey || event.altKey) return;
-    const result = handleKey(this.input, event.key, this.state.view);
+    const key = event.shiftKey && (event.key === "ArrowDown" || event.key === "ArrowUp")
+      ? `Shift+${event.key}`
+      : event.key;
+    const result = handleKey(this.input, key, this.state.view);
     this.input = result.state;
 
     if (this.input.mode === "search" && !result.command) return;
@@ -101,18 +104,28 @@ export class Controller {
   private async run(command: Command): Promise<void> {
     if (command === "next") return this.move(1);
     if (command === "previous") return this.move(-1);
+    if (command === "nextPage") return this.movePage(1, "start");
+    if (command === "previousPage") return this.movePage(-1, "end");
+    if (command === "nextDomain") return this.moveDomain(1);
+    if (command === "previousDomain") return this.moveDomain(-1);
     if (command === "first") return this.moveTo(0);
     if (command === "last") return this.moveTo(this.rows.length - 1);
     if (command === "mark") return this.markCurrent(true, true);
     if (command === "markDelete") return this.markCurrentForDeletion();
-    if (command === "unmark") return this.markCurrent(false, true);
+    if (command === "unmark") {
+      if (this.currentRow()?.kind === "domain") return this.unmarkDomain();
+      return this.markCurrent(false, true);
+    }
     if (command === "toggleMark") return this.toggleCurrent();
     if (command === "unmarkAll") {
       this.state = { ...this.state, markedIds: new Set(), deletionMarkedIds: new Set() };
       return this.render();
     }
     if (command === "markGroup") return this.markGroup();
-    if (command === "deleteMarked") return this.deleteMarked();
+    if (command === "deleteMarked") {
+      if (this.currentRow()?.kind === "domain") return this.markDomainForDeletion();
+      return this.deleteMarked();
+    }
     if (command === "requestDeleteConfirmation") {
       if (this.state.deletionMarkedIds.size) this.input = { mode: "confirmDelete", pending: "" };
       return this.render();
@@ -188,12 +201,13 @@ export class Controller {
     this.render();
   }
 
-  private render(): void {
+  private render(cursorScrollBlock: ScrollLogicalPosition = "nearest"): void {
     this.renderer.render({
       state: this.state,
       rows: this.rows,
       cursorRowId: this.cursorRowId,
       input: this.input,
+      cursorScrollBlock,
       isProtected: (id) => this.isProtected(id),
     });
   }
@@ -218,10 +232,37 @@ export class Controller {
     this.moveTo(Math.max(0, Math.min(this.rows.length - 1, current + delta)));
   }
 
-  private moveTo(index: number): void {
+  private movePage(direction: -1 | 1, block: ScrollLogicalPosition): void {
+    const current = this.rows.findIndex((row) => row.rowId === this.cursorRowId);
+    this.moveTo(
+      Math.max(0, Math.min(this.rows.length - 1, current + direction * this.pageLength())),
+      block,
+    );
+  }
+
+  private moveDomain(direction: -1 | 1): void {
+    const current = this.rows.findIndex((row) => row.rowId === this.cursorRowId);
+    const rows = direction === 1
+      ? this.rows.slice(current + 1)
+      : [...this.rows.slice(0, current)].reverse();
+    const domain = rows.find((row) => row.kind === "domain");
+    if (domain) this.moveTo(this.rows.indexOf(domain));
+  }
+
+  private moveTo(index: number, block: ScrollLogicalPosition = "nearest"): void {
     if (!this.rows[index]) return;
     this.select(this.rows[index].rowId);
-    this.render();
+    this.render(block);
+  }
+
+  private pageLength(): number {
+    if (typeof window === "undefined" || typeof document === "undefined") return 10;
+    const row = document.querySelector<HTMLElement>(".row")?.getBoundingClientRect();
+    if (!row?.height) return 10;
+    const top = document.querySelector<HTMLElement>("header")?.getBoundingClientRect().bottom ?? 0;
+    const bottom = document.querySelector<HTMLElement>("footer")?.getBoundingClientRect().top
+      ?? window.innerHeight;
+    return Math.max(1, Math.floor((bottom - top) / row.height) - 2);
   }
 
   private markCurrent(mark: boolean, advance: boolean): void {
@@ -235,10 +276,32 @@ export class Controller {
   }
 
   private markCurrentForDeletion(): void {
+    if (this.currentRow()?.kind === "domain") return this.markDomainForDeletion();
     for (const id of this.deletionTargetIds()) {
       if (!this.isDeletionProtected(id)) this.state = markTabForDeletion(this.state, id);
     }
     this.move(1);
+  }
+
+  private markDomainForDeletion(): void {
+    for (const id of this.deletionTargetIds()) {
+      if (!this.isDeletionProtected(id)) this.state = markTabForDeletion(this.state, id);
+    }
+
+    this.moveToOtherDomain();
+  }
+
+  private unmarkDomain(): void {
+    for (const id of this.deletionTargetIds()) this.state = unmarkTab(this.state, id);
+    this.moveToOtherDomain();
+  }
+
+  private moveToOtherDomain(): void {
+    const current = this.rows.findIndex((row) => row.rowId === this.cursorRowId);
+    const next = this.rows.slice(current + 1).find((row) => row.kind === "domain")
+      ?? [...this.rows.slice(0, current)].reverse().find((row) => row.kind === "domain");
+    this.select(next?.rowId ?? this.cursorRowId);
+    this.render();
   }
 
   private deletionTargetIds(): number[] {

@@ -3,6 +3,10 @@ import type { ViewMode } from "../core/state";
 export type Command =
   | "next"
   | "previous"
+  | "nextPage"
+  | "previousPage"
+  | "nextDomain"
+  | "previousDomain"
   | "first"
   | "last"
   | "mark"
@@ -48,8 +52,10 @@ export interface KeyResult {
 const singleKeys: Readonly<Record<string, Command>> = {
   j: "next",
   ArrowDown: "next",
+  PageDown: "nextPage",
   k: "previous",
   ArrowUp: "previous",
+  PageUp: "previousPage",
   G: "last",
   m: "mark",
   d: "markDelete",
@@ -102,6 +108,12 @@ export function handleKey(state: InputState, key: string, view: ViewMode): KeyRe
   }
 
   if (key === "Escape") return { state: createInputState() };
+  if (view === "domain" && (key === "J" || key === "Shift+ArrowDown")) {
+    return command("nextDomain");
+  }
+  if (view === "domain" && (key === "K" || key === "Shift+ArrowUp")) {
+    return command("previousDomain");
+  }
   if (key === "?") return { state: { mode: "help", pending: "" }, command: "enterHelp" };
   if (key === "/") return { state: { mode: "search", pending: "" }, command: "enterSearch" };
   if (state.pending === "g" && key === "g") return command("first");

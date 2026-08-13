@@ -29,6 +29,6 @@ export function statusText(state: AppState, input: InputState, visibleRows: numb
   const marked = state.markedIds.size + state.deletionMarkedIds.size;
   const keys = input.mode === "help"
     ? "q/?/Esc close help"
-    : "j/k move · s sort · d mark-delete · x execute · / push search · \\ pop search · ? help · q quit";
+    : "j/k/PgUp/PgDn move · J/K/⇧↑↓ domains · s sort · d mark-delete · x execute · / push search · \\ pop search · ? help · q quit";
   return `-- ${mode} --  ${view} · theme:${state.theme} · ${state.tabs.size} tabs · ${marked} marked${filter} · ${visibleRows} rows  · ${keys}`;
 }
