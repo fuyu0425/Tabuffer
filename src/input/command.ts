@@ -7,6 +7,7 @@ export type Command =
   | "previousPage"
   | "nextDomain"
   | "previousDomain"
+  | "recenter"
   | "first"
   | "last"
   | "mark"
@@ -71,6 +72,7 @@ const singleKeys: Readonly<Record<string, Command>> = {
   "2": "domainView",
   "3": "treeView",
   T: "cycleTheme",
+  z: "recenter",
   h: "left",
   l: "right",
   q: "quit",

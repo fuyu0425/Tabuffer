@@ -229,6 +229,15 @@ it("aligns page-down at the top and page-up at the bottom like ibuffer", async (
   expect(render).toHaveBeenLastCalledWith(expect.objectContaining({ cursorScrollBlock: "end" }));
 });
 
+it("recenters the cursor with z", async () => {
+  const { controller } = setup([tab(1), tab(2)]);
+  const render = vi.mocked((controller as unknown as { renderer: Renderer }).renderer.render);
+
+  await controller.run("recenter");
+
+  expect(render).toHaveBeenLastCalledWith(expect.objectContaining({ cursorScrollBlock: "center" }));
+});
+
 it("measures a page between the fixed header and footer with row overlap", () => {
   const { controller } = setup([tab(1)]);
   const rect = (top: number, bottom: number, height: number) => ({ top, bottom, height });
@@ -278,6 +287,8 @@ it("requires confirmation before executing deletion marks", async () => {
 
   expect(adapter.closeTabs).toHaveBeenCalledWith([1]);
   expect(adapter.closeTabs).not.toHaveBeenCalledWith([2]);
+  const render = vi.mocked((controller as unknown as { renderer: Renderer }).renderer.render);
+  expect(render).toHaveBeenLastCalledWith(expect.objectContaining({ cursorScrollBlock: "center" }));
 });
 
 it("marks, confirms, and closes a pinned tab through deletion flags", async () => {

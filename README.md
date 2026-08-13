@@ -73,6 +73,7 @@ Auto is the default theme and follows the browser's current system color scheme.
 | `k` / `↑` | Select the previous row |
 | `J` / `K` or `Shift+↓` / `Shift+↑` | Select the next / previous Domain header in Domain view |
 | `Page Down` / `Page Up` | Select the next / previous visible page |
+| `z` | Recenter the selected row |
 | `gg` / `G` | Select the first / last row |
 | `h` / `l` | Collapse / expand a domain or tree branch |
 | `Enter` | Activate the selected tab |

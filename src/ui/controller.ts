@@ -108,6 +108,7 @@ export class Controller {
     if (command === "previousPage") return this.movePage(-1, "end");
     if (command === "nextDomain") return this.moveDomain(1);
     if (command === "previousDomain") return this.moveDomain(-1);
+    if (command === "recenter") return this.recenter();
     if (command === "first") return this.moveTo(0);
     if (command === "last") return this.moveTo(this.rows.length - 1);
     if (command === "mark") return this.markCurrent(true, true);
@@ -132,7 +133,8 @@ export class Controller {
     }
     if (command === "executeDeletes") {
       this.input = createInputState();
-      return this.deleteMarked(true);
+      await this.deleteMarked(true);
+      return this.recenter();
     }
     if (command === "cancelDeleteConfirmation") {
       this.input = createInputState();
@@ -210,6 +212,10 @@ export class Controller {
       cursorScrollBlock,
       isProtected: (id) => this.isProtected(id),
     });
+  }
+
+  private recenter(): void {
+    this.render("center");
   }
 
   private currentRow(): VisibleRow | undefined {

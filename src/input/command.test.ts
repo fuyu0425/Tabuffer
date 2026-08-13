@@ -25,6 +25,7 @@ describe("normal mode commands", () => {
     ["2", "domainView"],
     ["3", "treeView"],
     ["T", "cycleTheme"],
+    ["z", "recenter"],
     ["h", "left"],
     ["l", "right"],
     ["q", "quit"],
